@@ -154,6 +154,14 @@
   const cardsContainer = document.getElementById("cards");
   const submitBtn = document.getElementById("submitBtn");
 
+  let combinationsData = {};
+
+  // Загружаем трактовки при загрузке страницы
+  fetch('two_card_combinations_full.json')
+    .then(res => res.json())
+    .then(data => combinationsData = data)
+    .catch(err => console.error("Ошибка загрузки трактовок:", err));
+
   function createCard(name) {
     const div = document.createElement("div");
     div.className = "card";
@@ -180,15 +188,21 @@
     shuffled.forEach(name => cardsContainer.appendChild(createCard(name)));
   }
 
-  submitBtn.onclick = () => {
-    const data = { cards: selected };
+   submitBtn.onclick = () => {
+    const card1 = selected[0];
+    const card2 = selected[1];
+
+    const data = { card1, card2 };
+
     if (window.Telegram && Telegram.WebApp) {
       Telegram.WebApp.sendData(JSON.stringify(data));
       Telegram.WebApp.close();
     } else {
-      alert("Выбранные карты: " + selected.join(", "));
+      alert("Выбранные карты: " + card1 + ", " + card2);
     }
   };
+
+  renderCards();
 
   renderCards();
 </script>
