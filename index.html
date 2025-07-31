@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Выбор карт</title>
+  <style>
+    body {
+      background-color: #1e1e2f;
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+    h1 {
+      margin-bottom: 20px;
+    }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(3, 100px);
+      gap: 10px;
+      justify-content: center;
+    }
+    .card {
+      width: 100px;
+      height: 175px;
+      border-radius: 10px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 0.2s;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.4);
+    }
+    .card:hover {
+      transform: scale(1.05);
+    }
+    .card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 5px;
+      background-color: #8e44ad;
+      color: white;
+      cursor: pointer;
+    }
+    button:disabled {
+      background-color: #555;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+<h1>✨ Выбери 2 карты</h1>
+<div class="cards" id="cards"></div>
+<button id="submitBtn" disabled>🔮 Узнать трактовку</button>
+
+<script>
+  const cardImageMap = {
+    // Старшие Арканы
+    "Шут (0)": "fool.png",
+    "Маг (I)": "magician.png",
+    "Верховная Жрица (II)": "high_priestess.png",
+    "Императрица (III)": "empress.png",
+    "Император (IV)": "emperor.png",
+    "Иерофант (V)": "hierophant.png",
+    "Влюблённые (VI)": "lovers.png",
+    "Колесница (VII)": "chariot.png",
+    "Сила (VIII)": "strength.png",
+    "Отшельник (IX)": "hermit.png",
+    "Колесо Фортуны (X)": "wheel_of_fortune.png",
+    "Справедливость (XI)": "justice.png",
+    "Повешенный (XII)": "hanged_man.png",
+    "Смерть (XIII)": "death.png",
+    "Умеренность (XIV)": "temperance.png",
+    "Дьявол (XV)": "devil.png",
+    "Башня (XVI)": "tower.png",
+    "Звезда (XVII)": "star.png",
+    "Луна (XVIII)": "moon.png",
+    "Солнце (XIX)": "sun.png",
+    "Страшный Суд (XX)": "judgement.png",
+    "Мир (XXI)": "world.png",
+
+    // Кубки
+    "Туз Кубков": "ace_of_cups.png",
+    "Двойка Кубков": "two_of_cups.png",
+    "Тройка Кубков": "three_of_cups.png",
+    "Четвёрка Кубков": "four_of_cups.png",
+    "Пятёрка Кубков": "five_of_cups.png",
+    "Шестёрка Кубков": "six_of_cups.png",
+    "Семёрка Кубков": "seven_of_cups.png",
+    "Восьмёрка Кубков": "eight_of_cups.png",
+    "Девятка Кубков": "nine_of_cups.png",
+    "Десятка Кубков": "ten_of_cups.png",
+    "Паж Кубков": "page_of_cups.png",
+    "Рыцарь Кубков": "knight_of_cups.png",
+    "Королева Кубков": "queen_of_cups.png",
+    "Король Кубков": "king_of_cups.png",
+
+    // Мечи
+    "Туз Мечей": "ace_of_swords.png",
+    "Двойка Мечей": "two_of_swords.png",
+    "Тройка Мечей": "three_of_swords.png",
+    "Четвёрка Мечей": "four_of_swords.png",
+    "Пятёрка Мечей": "five_of_swords.png",
+    "Шестёрка Мечей": "six_of_swords.png",
+    "Семёрка Мечей": "seven_of_swords.png",
+    "Восьмёрка Мечей": "eight_of_swords.png",
+    "Девятка Мечей": "nine_of_swords.png",
+    "Десятка Мечей": "ten_of_swords.png",
+    "Паж Мечей": "page_of_swords.png",
+    "Рыцарь Мечей": "knight_of_swords.png",
+    "Королева Мечей": "queen_of_swords.png",
+    "Король Мечей": "king_of_swords.png",
+
+    // Пентакли
+    "Туз Пентаклей": "ace_of_pentacles.png",
+    "Двойка Пентаклей": "two_of_pentacles.png",
+    "Тройка Пентаклей": "three_of_pentacles.png",
+    "Четвёрка Пентаклей": "four_of_pentacles.png",
+    "Пятёрка Пентаклей": "five_of_pentacles.png",
+    "Шестёрка Пентаклей": "six_of_pentacles.png",
+    "Семёрка Пентаклей": "seven_of_pentacles.png",
+    "Восьмёрка Пентаклей": "eight_of_pentacles.png",
+    "Девятка Пентаклей": "nine_of_pentacles.png",
+    "Десятка Пентаклей": "ten_of_pentacles.png",
+    "Паж Пентаклей": "page_of_pentacles.png",
+    "Рыцарь Пентаклей": "knight_of_pentacles.png",
+    "Королева Пентаклей": "queen_of_pentacles.png",
+    "Король Пентаклей": "king_of_pentacles.png",
+
+    // Жезлы
+    "Туз Жезлов": "ace_of_wands.png",
+    "Двойка Жезлов": "two_of_wands.png",
+    "Тройка Жезлов": "three_of_wands.png",
+    "Четвёрка Жезлов": "four_of_wands.png",
+    "Пятёрка Жезлов": "five_of_wands.png",
+    "Шестёрка Жезлов": "six_of_wands.png",
+    "Семёрка Жезлов": "seven_of_wands.png",
+    "Восьмёрка Жезлов": "eight_of_wands.png",
+    "Девятка Жезлов": "nine_of_wands.png",
+    "Десятка Жезлов": "ten_of_wands.png",
+    "Паж Жезлов": "page_of_wands.png",
+    "Рыцарь Жезлов": "knight_of_wands.png",
+    "Королева Жезлов": "queen_of_wands.png",
+    "Король Жезлов": "king_of_wands.png"
+  };
+
+  const allCards = Object.keys(cardImageMap);
+  const selected = [];
+  const cardsContainer = document.getElementById("cards");
+  const submitBtn = document.getElementById("submitBtn");
+
+  function createCard(name) {
+    const div = document.createElement("div");
+    div.className = "card";
+    const img = document.createElement("img");
+    img.src = `images/rubashka.png`;
+    img.alt = name;
+    img.dataset.flipped = "false";
+    img.dataset.name = name;
+
+    div.appendChild(img);
+    div.onclick = () => {
+      if (selected.length < 2 && img.dataset.flipped === "false") {
+        img.src = `images/${cardImageMap[name]}`;
+        img.dataset.flipped = "true";
+        selected.push(name);
+        if (selected.length === 2) submitBtn.disabled = false;
+      }
+    };
+    return div;
+  }
+
+  function renderCards() {
+    const shuffled = allCards.sort(() => 0.5 - Math.random()).slice(0, 9);
+    shuffled.forEach(name => cardsContainer.appendChild(createCard(name)));
+  }
+
+  submitBtn.onclick = () => {
+    const data = { cards: selected };
+    if (window.Telegram && Telegram.WebApp) {
+      Telegram.WebApp.sendData(JSON.stringify(data));
+      Telegram.WebApp.close();
+    } else {
+      alert("Выбранные карты: " + selected.join(", "));
+    }
+  };
+
+  renderCards();
+</script>
+</body>
+</html>
