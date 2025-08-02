@@ -17,7 +17,7 @@
     }
     .cards {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+      grid-template-columns: repeat(3, minmax(80px, 1fr));
       gap: 10px;
       justify-content: center;
     }
@@ -55,7 +55,7 @@
 
     @media (max-width: 600px) {
       .cards {
-        grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+        grid-template-columns: repeat(3, minmax(60px, 1fr));
       }
       button {
         padding: 8px 16px;
@@ -65,7 +65,7 @@
 
     @media (max-width: 400px) {
       .cards {
-        grid-template-columns: repeat(auto-fit, minmax(50px, 1fr));
+        grid-template-columns: repeat(3, minmax(50px, 1fr));
       }
       button {
         padding: 6px 12px;
