@@ -205,6 +205,9 @@
   }
 
   function renderCards() {
+    cardsContainer.innerHTML = "";
+    selected.length = 0;
+    submitBtn.disabled = true;
     const shuffled = allCards.sort(() => 0.5 - Math.random()).slice(0, 9);
     shuffled.forEach(name => cardsContainer.appendChild(createCard(name)));
   }
@@ -222,8 +225,6 @@
       alert("Выбранные карты: " + card1 + ", " + card2);
     }
   };
-
-  renderCards();
 
   renderCards();
 </script>
