@@ -216,13 +216,25 @@
     const card1 = selected[0];
     const card2 = selected[1];
 
-    const data = { card1, card2 };
+    const key1 = `${card1}|${card2}`;
+    const key2 = `${card2}|${card1}`;
+    const interpretation = combinationsData[key1] || combinationsData[key2];
 
-    if (window.Telegram && Telegram.WebApp) {
-      Telegram.WebApp.sendData(JSON.stringify(data));
-      Telegram.WebApp.close();
+    if (interpretation) {
+      if (window.Telegram && Telegram.WebApp) {
+        Telegram.WebApp.sendData(interpretation);
+        Telegram.WebApp.close();
+      } else {
+        alert(interpretation);
+      }
     } else {
-      alert("Выбранные карты: " + card1 + ", " + card2);
+      const message = "К сожалению, эта комбинация не описана.";
+      if (window.Telegram && Telegram.WebApp) {
+        Telegram.WebApp.sendData(message);
+        Telegram.WebApp.close();
+      } else {
+        alert(message);
+      }
     }
   };
 
