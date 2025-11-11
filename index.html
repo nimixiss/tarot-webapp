@@ -21,6 +21,10 @@
       gap: 10px;
       justify-content: center;
     }
+    .cards.limit-reached .card {
+      opacity: 0.4;
+      cursor: default;
+    }
     .card {
       width: 100%;
       aspect-ratio: 100 / 175;
@@ -53,6 +57,13 @@
       cursor: not-allowed;
     }
 
+    .limit-message {
+      margin-top: 16px;
+      line-height: 1.5;
+      white-space: pre-line;
+      color: #d0c4ff;
+    }
+
     @media (max-width: 600px) {
       .cards {
         grid-template-columns: repeat(3, minmax(60px, 1fr));
@@ -78,6 +89,7 @@
 <h1>✨ Выбери 2 карты</h1>
 <div class="cards" id="cards"></div>
 <button id="submitBtn" disabled>🔮 Узнать трактовку</button>
+<p id="limitMessage" class="limit-message"></p>
 
 <script>
   const cardImageMap = {
@@ -174,8 +186,127 @@
   const selected = [];
   const cardsContainer = document.getElementById("cards");
   const submitBtn = document.getElementById("submitBtn");
+  const limitMessageEl = document.getElementById("limitMessage");
 
   let combinationsData = {};
+
+  // Настройки можно переопределить, объявив window.TarotConfig до подключения этого скрипта.
+  const userConfig = window.TarotConfig || {};
+  const adminIdList = (Array.isArray(userConfig.adminIds) && userConfig.adminIds.length > 0)
+    ? userConfig.adminIds
+    : ["123456789"];
+  const adminIds = new Set(adminIdList.map(id => String(id)));
+  if ((!userConfig.adminIds || userConfig.adminIds.length === 0) && adminIds.has("123456789")) {
+    console.warn("Tarot WebApp: укажи реальные adminIds в window.TarotConfig, чтобы снять ограничения для администратора.");
+  }
+  const dailyLimit = Number.isFinite(Number(userConfig.dailyTwoCardLimit)) && Number(userConfig.dailyTwoCardLimit) > 0
+    ? Number(userConfig.dailyTwoCardLimit)
+    : 1;
+  const consultationPrice = typeof userConfig.consultationPrice === "string" && userConfig.consultationPrice.trim().length > 0
+    ? userConfig.consultationPrice.trim()
+    : "100 звёзд Telegram";
+  const paymentMessage = (typeof userConfig.paymentMessage === "string" && userConfig.paymentMessage.trim().length > 0)
+    ? userConfig.paymentMessage.trim()
+    : `✨ Вселенная уже ответила тебе сегодня. Приходи завтра, когда энергия обновится 🌙\n\nЕсли хочешь глубже разобраться в ситуации, закажи личную консультацию с тарологом за ${consultationPrice}.`;
+  const limitNotice = (typeof userConfig.limitNotice === "string" && userConfig.limitNotice.trim().length > 0)
+    ? userConfig.limitNotice.trim()
+    : paymentMessage;
+
+  function getTodayKey() {
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    return startOfDay.toISOString().slice(0, 10);
+  }
+
+  function getUserId() {
+    const tg = window.Telegram && Telegram.WebApp ? Telegram.WebApp : null;
+    const id = tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id;
+    return id != null ? String(id) : "anonymous";
+  }
+
+  function isStorageAvailable() {
+    try {
+      const testKey = "__tarot_test__";
+      localStorage.setItem(testKey, "1");
+      localStorage.removeItem(testKey);
+      return true;
+    } catch (err) {
+      return false;
+    }
+  }
+
+  const storageEnabled = isStorageAvailable();
+  const userId = getUserId();
+  const storageKey = `two_card_draw_${userId}`;
+  const todayKey = getTodayKey();
+  const isAdmin = adminIds.has(userId);
+
+  function readUsageState() {
+    if (!storageEnabled) {
+      return { date: todayKey, count: 0 };
+    }
+    const raw = localStorage.getItem(storageKey);
+    if (!raw) {
+      return { date: todayKey, count: 0 };
+    }
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.date === todayKey && Number.isFinite(parsed.count)) {
+        return { date: todayKey, count: Number(parsed.count) };
+      }
+    } catch (err) {
+      console.warn("Tarot WebApp: не удалось прочитать usage state", err);
+    }
+    return { date: todayKey, count: 0 };
+  }
+
+  function writeUsageState(state) {
+    if (!storageEnabled) {
+      return;
+    }
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(state));
+    } catch (err) {
+      console.warn("Tarot WebApp: не удалось сохранить usage state", err);
+    }
+  }
+
+  let usageState = readUsageState();
+
+  function hasDrawsLeft() {
+    return isAdmin || usageState.count < dailyLimit;
+  }
+
+  function incrementUsage() {
+    if (isAdmin) {
+      return;
+    }
+    usageState = { date: todayKey, count: usageState.count + 1 };
+    writeUsageState(usageState);
+  }
+
+  function sendResult(text) {
+    if (window.Telegram && Telegram.WebApp) {
+      Telegram.WebApp.sendData(text);
+      Telegram.WebApp.close();
+    } else {
+      alert(text);
+    }
+  }
+
+  function updateUIState() {
+    if (!hasDrawsLeft()) {
+      submitBtn.textContent = "💫 Записаться на консультацию";
+      submitBtn.disabled = false;
+      limitMessageEl.textContent = limitNotice;
+      cardsContainer.classList.add("limit-reached");
+    } else {
+      submitBtn.textContent = "🔮 Узнать трактовку";
+      submitBtn.disabled = selected.length !== 2;
+      limitMessageEl.textContent = "";
+      cardsContainer.classList.remove("limit-reached");
+    }
+  }
 
   // Загружаем трактовки при загрузке страницы
   fetch('two_card_combinations_full.json')
@@ -194,11 +325,15 @@
 
     div.appendChild(img);
     div.onclick = () => {
+      if (!hasDrawsLeft()) {
+        sendResult(paymentMessage);
+        return;
+      }
       if (selected.length < 2 && img.dataset.flipped === "false") {
         img.src = `images/${cardImageMap[name]}`;
         img.dataset.flipped = "true";
         selected.push(name);
-        if (selected.length === 2) submitBtn.disabled = false;
+        updateUIState();
       }
     };
     return div;
@@ -207,12 +342,19 @@
   function renderCards() {
     cardsContainer.innerHTML = "";
     selected.length = 0;
-    submitBtn.disabled = true;
     const shuffled = allCards.sort(() => 0.5 - Math.random()).slice(0, 9);
     shuffled.forEach(name => cardsContainer.appendChild(createCard(name)));
+    updateUIState();
   }
 
    submitBtn.onclick = () => {
+    if (!hasDrawsLeft()) {
+      sendResult(paymentMessage);
+      return;
+    }
+    if (selected.length !== 2) {
+      return;
+    }
     const card1 = selected[0];
     const card2 = selected[1];
 
@@ -220,25 +362,25 @@
     const key2 = `${card2}|${card1}`;
     const interpretation = combinationsData[key1] || combinationsData[key2];
 
+    if (!isAdmin) {
+      incrementUsage();
+      updateUIState();
+    }
+
     if (interpretation) {
-      if (window.Telegram && Telegram.WebApp) {
-        Telegram.WebApp.sendData(interpretation);
-        Telegram.WebApp.close();
-      } else {
-        alert(interpretation);
-      }
+      sendResult(interpretation);
     } else {
       const message = "К сожалению, эта комбинация не описана.";
-      if (window.Telegram && Telegram.WebApp) {
-        Telegram.WebApp.sendData(message);
-        Telegram.WebApp.close();
-      } else {
-        alert(message);
-      }
+      sendResult(message);
+    }
+
+    if (!window.Telegram || !Telegram.WebApp) {
+      renderCards();
     }
   };
 
   renderCards();
+  updateUIState();
 </script>
 </body>
 </html>
