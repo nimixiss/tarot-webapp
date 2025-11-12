@@ -279,17 +279,15 @@
 
   let usageState = readUsageState();
 
-  function hasDrawsLeft() {
-    return isAdmin || usageState.count < dailyLimit;
-  }
+ // Всегда разрешаем тянуть карты
+function hasDrawsLeft() {
+  return true;
+}
 
-  function incrementUsage() {
-    if (isAdmin) {
-      return;
-    }
-    usageState = { date: todayKey, count: usageState.count + 1 };
-    writeUsageState(usageState);
-  }
+// Ничего не считаем, счётчик не нужен
+function incrementUsage() {
+  // no-op
+}
 
   function sendResult(text) {
     if (window.Telegram && Telegram.WebApp) {
@@ -300,19 +298,13 @@
     }
   }
 
-  function updateUIState() {
-    if (!hasDrawsLeft()) {
-      submitBtn.textContent = "💫 Записаться на консультацию";
-      submitBtn.disabled = false;
-      limitMessageEl.textContent = limitNotice;
-      cardsContainer.classList.add("limit-reached");
-    } else {
-      submitBtn.textContent = "🔮 Узнать трактовку";
-      submitBtn.disabled = selected.length !== 2;
-      limitMessageEl.textContent = "";
-      cardsContainer.classList.remove("limit-reached");
-    }
-  }
+ function updateUIState() {
+  submitBtn.textContent = "🔮 Узнать трактовку";
+  submitBtn.disabled = selected.length !== 2;
+  limitMessageEl.textContent = "";
+  cardsContainer.classList.remove("limit-reached");
+}
+
 
   // Загружаем трактовки при загрузке страницы
   fetch('two_card_combinations_full.json')
@@ -353,25 +345,33 @@
     updateUIState();
   }
 
-   submitBtn.onclick = () => {
-    if (!hasDrawsLeft()) {
-      sendResult(paymentMessage);
-      return;
-    }
-    if (selected.length !== 2) {
-      return;
-    }
-    const card1 = selected[0];
-    const card2 = selected[1];
+  submitBtn.onclick = () => {
+  if (selected.length !== 2) {
+    return;
+  }
 
-    const key1 = `${card1}|${card2}`;
-    const key2 = `${card2}|${card1}`;
-    const interpretation = combinationsData[key1] || combinationsData[key2];
+  const card1 = selected[0];
+  const card2 = selected[1];
 
-    if (!isAdmin) {
-      incrementUsage();
-      updateUIState();
-    }
+  const key1 = `${card1}|${card2}`;
+  const key2 = `${card2}|${card1}`;
+  const interpretation = combinationsData[key1] || combinationsData[key2];
+
+  // incrementUsage() больше не нужен, но если хочешь оставить – он пустой
+  // incrementUsage();
+  updateUIState();
+
+  if (interpretation) {
+    sendResult(interpretation);
+  } else {
+    const message = "К сожалению, эта комбинация не описана.";
+    sendResult(message);
+  }
+
+  if (!window.Telegram || !Telegram.WebApp) {
+    renderCards();
+  }
+};
 
     if (interpretation) {
       sendResult(interpretation);
