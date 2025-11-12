@@ -279,15 +279,15 @@
 
   let usageState = readUsageState();
 
- // Всегда разрешаем тянуть карты
-function hasDrawsLeft() {
-  return true;
-}
+  // Всегда разрешаем тянуть карты
+  function hasDrawsLeft() {
+    return true;
+  }
 
-// Ничего не считаем, счётчик не нужен
-function incrementUsage() {
-  // no-op
-}
+  // Ничего не считаем, счётчик не нужен
+  function incrementUsage() {
+    // no-op
+  }
 
   function sendResult(text) {
     if (window.Telegram && Telegram.WebApp) {
@@ -298,12 +298,12 @@ function incrementUsage() {
     }
   }
 
- function updateUIState() {
-  submitBtn.textContent = "🔮 Узнать трактовку";
-  submitBtn.disabled = selected.length !== 2;
-  limitMessageEl.textContent = "";
-  cardsContainer.classList.remove("limit-reached");
-}
+  function updateUIState() {
+    submitBtn.textContent = "🔮 Узнать трактовку";
+    submitBtn.disabled = selected.length !== 2;
+    limitMessageEl.textContent = "";
+    cardsContainer.classList.remove("limit-reached");
+  }
 
 
   // Загружаем трактовки при загрузке страницы
@@ -346,32 +346,18 @@ function incrementUsage() {
   }
 
   submitBtn.onclick = () => {
-  if (selected.length !== 2) {
-    return;
-  }
+    if (selected.length !== 2) {
+      return;
+    }
 
-  const card1 = selected[0];
-  const card2 = selected[1];
+    const card1 = selected[0];
+    const card2 = selected[1];
 
-  const key1 = `${card1}|${card2}`;
-  const key2 = `${card2}|${card1}`;
-  const interpretation = combinationsData[key1] || combinationsData[key2];
+    const key1 = `${card1}|${card2}`;
+    const key2 = `${card2}|${card1}`;
+    const interpretation = combinationsData[key1] || combinationsData[key2];
 
-  // incrementUsage() больше не нужен, но если хочешь оставить – он пустой
-  // incrementUsage();
-  updateUIState();
-
-  if (interpretation) {
-    sendResult(interpretation);
-  } else {
-    const message = "К сожалению, эта комбинация не описана.";
-    sendResult(message);
-  }
-
-  if (!window.Telegram || !Telegram.WebApp) {
-    renderCards();
-  }
-};
+    updateUIState();
 
     if (interpretation) {
       sendResult(interpretation);
