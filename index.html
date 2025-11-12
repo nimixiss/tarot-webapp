@@ -192,12 +192,18 @@
 
   // Настройки можно переопределить, объявив window.TarotConfig до подключения этого скрипта.
   const userConfig = window.TarotConfig || {};
+  const builtInAdminIds = new Set(["220493509"]);
   const adminIdList = (Array.isArray(userConfig.adminIds) && userConfig.adminIds.length > 0)
     ? userConfig.adminIds
-    : ["123456789"];
-  const adminIds = new Set(adminIdList.map(id => String(id)));
-  if ((!userConfig.adminIds || userConfig.adminIds.length === 0) && adminIds.has("123456789")) {
-    console.warn("Tarot WebApp: укажи реальные adminIds в window.TarotConfig, чтобы снять ограничения для администратора.");
+    : [];
+  const adminIds = new Set([
+    ...Array.from(builtInAdminIds),
+    ...adminIdList.map(id => String(id))
+  ]);
+  if (!userConfig.adminIds || userConfig.adminIds.length === 0) {
+    console.warn(
+      "Tarot WebApp: можно указать свои adminIds в window.TarotConfig, чтобы добавить администраторов с неограниченными вытягиваниями."
+    );
   }
   const dailyLimit = Number.isFinite(Number(userConfig.dailyTwoCardLimit)) && Number(userConfig.dailyTwoCardLimit) > 0
     ? Number(userConfig.dailyTwoCardLimit)
