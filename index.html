@@ -93,7 +93,6 @@
 
 <script>
   const cardImageMap = {
-    // Старшие Арканы
     "Шут (0)": "fool.png",
     "Маг (I)": "magician.png",
     "Верховная Жрица (II)": "high_priestess.png",
@@ -116,8 +115,6 @@
     "Солнце (XIX)": "sun.png",
     "Суд (XX)": "judgement.png",
     "Мир (XXI)": "world.png",
-
-    // Кубки
     "Туз Кубков": "ace_of_cups.png",
     "Двойка Кубков": "two_of_cups.png",
     "Тройка Кубков": "three_of_cups.png",
@@ -132,8 +129,6 @@
     "Рыцарь Кубков": "knight_of_cups.png",
     "Королева Кубков": "queen_of_cups.png",
     "Король Кубков": "king_of_cups.png",
-
-    // Мечи
     "Туз Мечей": "ace_of_swords.png",
     "Двойка Мечей": "two_of_swords.png",
     "Тройка Мечей": "three_of_swords.png",
@@ -148,8 +143,6 @@
     "Рыцарь Мечей": "knight_of_swords.png",
     "Королева Мечей": "queen_of_swords.png",
     "Король Мечей": "king_of_swords.png",
-
-    // Пентакли
     "Туз Пентаклей": "ace_of_pentacles.png",
     "Двойка Пентаклей": "two_of_pentacles.png",
     "Тройка Пентаклей": "three_of_pentacles.png",
@@ -164,8 +157,6 @@
     "Рыцарь Пентаклей": "knight_of_pentacles.png",
     "Королева Пентаклей": "queen_of_pentacles.png",
     "Король Пентаклей": "king_of_pentacles.png",
-
-    // Жезлы
     "Туз Жезлов": "ace_of_wands.png",
     "Двойка Жезлов": "two_of_wands.png",
     "Тройка Жезлов": "three_of_wands.png",
@@ -188,9 +179,6 @@
   const submitBtn = document.getElementById("submitBtn");
   const limitMessageEl = document.getElementById("limitMessage");
 
-  let combinationsData = {};
-
-  // Настройки можно переопределить, объявив window.TarotConfig до подключения этого скрипта.
   const userConfig = window.TarotConfig || {};
   const builtInAdminIds = new Set(["220493509"]);
   const adminIdList = (Array.isArray(userConfig.adminIds) && userConfig.adminIds.length > 0)
@@ -200,14 +188,18 @@
     ...Array.from(builtInAdminIds),
     ...adminIdList.map(id => String(id))
   ]);
-  if (!userConfig.adminIds || userConfig.adminIds.length === 0) {
-    console.warn(
-      "Tarot WebApp: можно указать свои adminIds в window.TarotConfig, чтобы добавить администраторов с неограниченными вытягиваниями."
-    );
-  }
-  const dailyLimit = Number.isFinite(Number(userConfig.dailyTwoCardLimit)) && Number(userConfig.dailyTwoCardLimit) > 0
-    ? Number(userConfig.dailyTwoCardLimit)
-    : 1;
+
+  const readingApiUrl = typeof userConfig.readingApiUrl === "string" && userConfig.readingApiUrl.trim().length > 0
+    ? userConfig.readingApiUrl.trim()
+    : "/api/readings/two-cards";
+  const readingApiToken = typeof userConfig.readingApiToken === "string" && userConfig.readingApiToken.trim().length > 0
+    ? userConfig.readingApiToken.trim()
+    : "";
+  const forbidDuplicateCards = userConfig.forbidDuplicateCards !== false;
+  const requestTimeoutMs = Number.isFinite(Number(userConfig.requestTimeoutMs)) && Number(userConfig.requestTimeoutMs) > 0
+    ? Number(userConfig.requestTimeoutMs)
+    : 20000;
+
   const consultationPrice = typeof userConfig.consultationPrice === "string" && userConfig.consultationPrice.trim().length > 0
     ? userConfig.consultationPrice.trim()
     : "100 звёзд Telegram";
@@ -227,9 +219,6 @@
   const paymentMessage = (typeof userConfig.paymentMessage === "string" && userConfig.paymentMessage.trim().length > 0)
     ? userConfig.paymentMessage.trim()
     : `✨ Вселенная уже ответила тебе сегодня. Приходи завтра, когда энергия обновится 🌙\n\nЕсли хочешь глубже разобраться в ситуации, закажи личную консультацию с тарологом за ${consultationPrice}.`;
-  const limitNotice = (typeof userConfig.limitNotice === "string" && userConfig.limitNotice.trim().length > 0)
-    ? userConfig.limitNotice.trim()
-    : paymentMessage;
 
   function getTodayKey() {
     const now = new Date();
@@ -243,63 +232,13 @@
     return id != null ? String(id) : "anonymous";
   }
 
-  function isStorageAvailable() {
-    try {
-      const testKey = "__tarot_test__";
-      localStorage.setItem(testKey, "1");
-      localStorage.removeItem(testKey);
-      return true;
-    } catch (err) {
-      return false;
-    }
-  }
-
-  const storageEnabled = isStorageAvailable();
   const userId = getUserId();
-  const storageKey = `two_card_draw_${userId}`;
   const todayKey = getTodayKey();
+  const sessionId = `${userId}:${todayKey}`;
   const isAdmin = adminIds.has(userId);
 
-  function readUsageState() {
-    if (!storageEnabled) {
-      return { date: todayKey, count: 0 };
-    }
-    const raw = localStorage.getItem(storageKey);
-    if (!raw) {
-      return { date: todayKey, count: 0 };
-    }
-    try {
-      const parsed = JSON.parse(raw);
-      if (parsed && parsed.date === todayKey && Number.isFinite(parsed.count)) {
-        return { date: todayKey, count: Number(parsed.count) };
-      }
-    } catch (err) {
-      console.warn("Tarot WebApp: не удалось прочитать usage state", err);
-    }
-    return { date: todayKey, count: 0 };
-  }
-
-  function writeUsageState(state) {
-    if (!storageEnabled) {
-      return;
-    }
-    try {
-      localStorage.setItem(storageKey, JSON.stringify(state));
-    } catch (err) {
-      console.warn("Tarot WebApp: не удалось сохранить usage state", err);
-    }
-  }
-
-  let usageState = readUsageState();
-
-  // Всегда разрешаем тянуть карты
   function hasDrawsLeft() {
     return true;
-  }
-
-  // Ничего не считаем, счётчик не нужен
-  function incrementUsage() {
-    // no-op
   }
 
   function sendResult(text) {
@@ -365,20 +304,56 @@
   }
 
 
-  // Загружаем трактовки при загрузке страницы
-  fetch('two_card_combinations_full.json')
-    .then(res => res.json())
-    .then(data => combinationsData = data)
-    .catch(err => console.error("Ошибка загрузки трактовок:", err));
+    try {
+      return await fetch(url, {
+        ...options,
+        signal: controller.signal
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  async function getTwoCardReading(firstCard, secondCard) {
+    if (forbidDuplicateCards && firstCard === secondCard) {
+      throw new Error("Нельзя выбрать две одинаковые карты.");
+    }
+
+    const response = await fetchWithTimeout(readingApiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(readingApiToken ? { Authorization: `Bearer ${readingApiToken}` } : {})
+      },
+      body: JSON.stringify({
+        first_card: firstCard,
+        second_card: secondCard,
+        user_id: userId,
+        session_id: sessionId
+      })
+    }, requestTimeoutMs);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || `Ошибка backend (${response.status})`);
+    }
+
+    const data = await response.json();
+    const reading = typeof data.reading === "string" ? data.reading.trim() : "";
+    if (!reading) {
+      throw new Error("Backend вернул пустую трактовку.");
+    }
+
+    return reading;
+  }
 
   function createCard(name) {
     const div = document.createElement("div");
     div.className = "card";
     const img = document.createElement("img");
-    img.src = `images/rubashka.png`;
+    img.src = "images/rubashka.png";
     img.alt = name;
     img.dataset.flipped = "false";
-    img.dataset.name = name;
 
     div.appendChild(img);
     div.onclick = () => {
@@ -386,6 +361,7 @@
         sendResult(paymentMessage);
         return;
       }
+
       if (selected.length < 2 && img.dataset.flipped === "false") {
         img.src = `images/${cardImageMap[name]}`;
         img.dataset.flipped = "true";
@@ -399,7 +375,7 @@
   function renderCards() {
     cardsContainer.innerHTML = "";
     selected.length = 0;
-    const shuffled = allCards.sort(() => 0.5 - Math.random()).slice(0, 9);
+    const shuffled = [...allCards].sort(() => 0.5 - Math.random()).slice(0, 9);
     shuffled.forEach(name => cardsContainer.appendChild(createCard(name)));
     updateUIState();
   }
@@ -409,31 +385,18 @@
       return;
     }
 
-    const card1 = selected[0];
-    const card2 = selected[1];
+    const firstCard = selected[0];
+    const secondCard = selected[1];
 
     submitBtn.disabled = true;
     submitBtn.textContent = "⏳ Формирую трактовку...";
 
     try {
-      let interpretation = "";
-
-      if (useRealtimeInterpretation) {
-        interpretation = await getRealtimeInterpretation(card1, card2);
-      } else {
-        const key1 = `${card1}|${card2}`;
-        const key2 = `${card2}|${card1}`;
-        interpretation = combinationsData[key1] || combinationsData[key2] || "";
-      }
-
-      if (interpretation) {
-        sendResult(interpretation);
-      } else {
-        sendResult("К сожалению, эта комбинация не описана.");
-      }
+      const reading = await getTwoCardReading(firstCard, secondCard);
+      sendResult(reading);
     } catch (err) {
       console.error("Ошибка получения трактовки:", err);
-      sendResult("Не удалось получить трактовку в реальном времени. Попробуй ещё раз чуть позже.");
+      sendResult("Не удалось получить трактовку сейчас. Попробуй снова через минуту.");
     } finally {
       updateUIState();
     }
@@ -445,6 +408,10 @@
 
   renderCards();
   updateUIState();
+
+  if (!isAdmin) {
+    limitMessageEl.textContent = "";
+  }
 </script>
 </body>
 </html>
