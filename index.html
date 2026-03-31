@@ -304,6 +304,10 @@
   }
 
 
+  async function fetchWithTimeout(url, options = {}, timeoutMs = requestTimeoutMs) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
     try {
       return await fetch(url, {
         ...options,
