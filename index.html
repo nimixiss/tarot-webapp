@@ -203,6 +203,19 @@
   const consultationPrice = typeof userConfig.consultationPrice === "string" && userConfig.consultationPrice.trim().length > 0
     ? userConfig.consultationPrice.trim()
     : "100 звёзд Telegram";
+  const interpretationApiUrl = typeof userConfig.interpretationApiUrl === "string" && userConfig.interpretationApiUrl.trim().length > 0
+    ? userConfig.interpretationApiUrl.trim()
+    : "";
+  const interpretationApiToken = typeof userConfig.interpretationApiToken === "string" && userConfig.interpretationApiToken.trim().length > 0
+    ? userConfig.interpretationApiToken.trim()
+    : "";
+  const useRealtimeInterpretation = userConfig.useRealtimeInterpretation === true;
+  const tarotSystemPrompt = typeof userConfig.tarotSystemPrompt === "string" && userConfig.tarotSystemPrompt.trim().length > 0
+    ? userConfig.tarotSystemPrompt.trim()
+    : "Ты опытный таролог. Дай тёплую и понятную трактовку комбинации из 2 карт Таро на русском языке. Длина: 500-700 символов. Добавь: 1) общий смысл, 2) как это проявляется сейчас, 3) мягкий практический совет. Избегай категоричных предсказаний и медицинских/юридических утверждений.";
+  const tarotUserPromptTemplate = typeof userConfig.tarotUserPromptTemplate === "string" && userConfig.tarotUserPromptTemplate.trim().length > 0
+    ? userConfig.tarotUserPromptTemplate.trim()
+    : "Карты: {{card1}} и {{card2}}. Сформулируй трактовку по указанным правилам.";
   const paymentMessage = (typeof userConfig.paymentMessage === "string" && userConfig.paymentMessage.trim().length > 0)
     ? userConfig.paymentMessage.trim()
     : `✨ Вселенная уже ответила тебе сегодня. Приходи завтра, когда энергия обновится 🌙\n\nЕсли хочешь глубже разобраться в ситуации, закажи личную консультацию с тарологом за ${consultationPrice}.`;
@@ -244,9 +257,52 @@
     cardsContainer.classList.remove("limit-reached");
   }
 
-  async function fetchWithTimeout(url, options = {}, timeoutMs = 20000) {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  function fillPromptTemplate(template, card1, card2) {
+    return template
+      .replaceAll("{{card1}}", card1)
+      .replaceAll("{{card2}}", card2);
+  }
+
+  async function getRealtimeInterpretation(card1, card2) {
+    if (!interpretationApiUrl) {
+      throw new Error("Не задан interpretationApiUrl в window.TarotConfig.");
+    }
+
+    const userPrompt = fillPromptTemplate(tarotUserPromptTemplate, card1, card2);
+    const response = await fetch(interpretationApiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(interpretationApiToken ? { Authorization: `Bearer ${interpretationApiToken}` } : {})
+      },
+      body: JSON.stringify({
+        cards: [card1, card2],
+        card1,
+        card2,
+        userId,
+        systemPrompt: tarotSystemPrompt,
+        userPrompt
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`API вернул ${response.status}`);
+    }
+
+    const data = await response.json();
+    const text = typeof data.interpretation === "string"
+      ? data.interpretation.trim()
+      : typeof data.text === "string"
+        ? data.text.trim()
+        : "";
+
+    if (!text) {
+      throw new Error("API не вернул текст трактовки.");
+    }
+
+    return text;
+  }
+
 
     try {
       return await fetch(url, {
