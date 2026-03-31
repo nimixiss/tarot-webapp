@@ -337,6 +337,27 @@
       })
     }, requestTimeoutMs);
 
+    if (!response.ok && response.status === 405) {
+      const getUrl = new URL(readingApiUrl, window.location.origin);
+      getUrl.searchParams.set("first_card", firstCard);
+      getUrl.searchParams.set("second_card", secondCard);
+
+      const getResponse = await fetchWithTimeout(getUrl.toString(), {
+        method: "GET",
+        headers: {
+          ...(readingApiToken ? { Authorization: `Bearer ${readingApiToken}` } : {})
+        }
+      }, requestTimeoutMs);
+
+      if (getResponse.ok) {
+        const fallbackData = await getResponse.json();
+        const fallbackReading = typeof fallbackData.reading === "string" ? fallbackData.reading.trim() : "";
+        if (fallbackReading) {
+          return fallbackReading;
+        }
+      }
+    }
+
     if (!response.ok) {
       const errorText = await response.text();
       let detail = `Backend вернул ошибку (${response.status})`;
