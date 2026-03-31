@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
@@ -51,8 +51,33 @@ def health() -> dict[str, str]:
 
 @app.post("/api/readings/two-cards", response_model=TwoCardReadingResponse)
 def create_two_card_reading(payload: TwoCardReadingRequest) -> TwoCardReadingResponse:
-    first_card = payload.first_card.strip()
-    second_card = payload.second_card.strip()
+    return _build_two_card_reading(
+        first_card=payload.first_card,
+        second_card=payload.second_card,
+        topic=payload.topic,
+    )
+
+
+@app.get("/api/readings/two-cards", response_model=TwoCardReadingResponse)
+def create_two_card_reading_get(
+    first_card: str = Query(..., min_length=1),
+    second_card: str = Query(..., min_length=1),
+    topic: Optional[str] = None,
+) -> TwoCardReadingResponse:
+    return _build_two_card_reading(
+        first_card=first_card,
+        second_card=second_card,
+        topic=topic,
+    )
+
+
+def _build_two_card_reading(
+    first_card: str,
+    second_card: str,
+    topic: Optional[str] = None,
+) -> TwoCardReadingResponse:
+    first_card = first_card.strip()
+    second_card = second_card.strip()
 
     if _is_duplicate_forbidden() and first_card == second_card:
         raise HTTPException(status_code=400, detail="Duplicate cards are not allowed")
@@ -65,7 +90,7 @@ def create_two_card_reading(payload: TwoCardReadingRequest) -> TwoCardReadingRes
         reading = service.generate_two_card_reading(
             first_card=first_card,
             second_card=second_card,
-            topic=payload.topic,
+            topic=topic,
         )
         return TwoCardReadingResponse(reading=reading, model=service.model)
     except TarotAIConfigError as exc:

@@ -337,14 +337,39 @@
       })
     }, requestTimeoutMs);
 
+    if (!response.ok && response.status === 405) {
+      const getUrl = new URL(readingApiUrl, window.location.origin);
+      getUrl.searchParams.set("first_card", firstCard);
+      getUrl.searchParams.set("second_card", secondCard);
+
+      const getResponse = await fetchWithTimeout(getUrl.toString(), {
+        method: "GET",
+        headers: {
+          ...(readingApiToken ? { Authorization: `Bearer ${readingApiToken}` } : {})
+        }
+      }, requestTimeoutMs);
+
+      if (getResponse.ok) {
+        const fallbackData = await getResponse.json();
+        const fallbackReading = typeof fallbackData.reading === "string" ? fallbackData.reading.trim() : "";
+        if (fallbackReading) {
+          return fallbackReading;
+        }
+      }
+    }
+
     if (!response.ok) {
       const errorText = await response.text();
-      let detail = errorText;
+      let detail = `Backend вернул ошибку (${response.status})`;
       try {
         const parsed = JSON.parse(errorText);
-        detail = typeof parsed.detail === "string" ? parsed.detail : errorText;
+        if (typeof parsed.detail === "string" && parsed.detail.trim()) {
+          detail = parsed.detail.trim();
+        }
       } catch (_) {
-        // ignore non-JSON body
+        if (!/<[^>]+>/.test(errorText) && errorText.trim()) {
+          detail = errorText.trim();
+        }
       }
       throw new Error(detail || `Ошибка backend (${response.status})`);
     }

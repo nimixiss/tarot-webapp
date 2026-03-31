@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 from typing import Optional
 
-from openai import APIConnectionError, APITimeoutError, OpenAI, RateLimitError
+from openai import APIConnectionError, APIStatusError, APITimeoutError, OpenAI, RateLimitError
 
 
 class TarotAIError(Exception):
@@ -55,6 +55,15 @@ class TarotAIService:
             topic=topic_value or "не указана",
         )
 
+        text = self._generate_with_responses_api(user_prompt)
+        if not text:
+            text = self._generate_with_chat_completions_api(user_prompt)
+        if not text:
+            raise TarotAIEmptyResponseError("OpenAI returned empty response")
+
+        return text
+
+    def _generate_with_responses_api(self, user_prompt: str) -> str:
         try:
             response = self.client.responses.create(
                 model=self.model,
@@ -63,13 +72,30 @@ class TarotAIService:
                     {"role": "user", "content": user_prompt},
                 ],
             )
+            return (response.output_text or "").strip()
         except (APITimeoutError, APIConnectionError, RateLimitError) as exc:
             raise TarotAIUnavailableError("OpenAI API is unavailable") from exc
+        except APIStatusError as exc:
+            if exc.status_code in {404, 405, 501}:
+                return ""
+            raise TarotAIUnavailableError(f"OpenAI API status error: {exc.status_code}") from exc
         except Exception as exc:  # pragma: no cover
             raise TarotAIUnavailableError("OpenAI API call failed") from exc
 
-        text = (response.output_text or "").strip()
-        if not text:
-            raise TarotAIEmptyResponseError("OpenAI returned empty response")
-
-        return text
+    def _generate_with_chat_completions_api(self, user_prompt: str) -> str:
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": self.system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+            )
+            message = response.choices[0].message if response.choices else None
+            return (message.content or "").strip() if message else ""
+        except (APITimeoutError, APIConnectionError, RateLimitError) as exc:
+            raise TarotAIUnavailableError("OpenAI API is unavailable") from exc
+        except APIStatusError as exc:
+            raise TarotAIUnavailableError(f"OpenAI API status error: {exc.status_code}") from exc
+        except Exception as exc:  # pragma: no cover
+            raise TarotAIUnavailableError("OpenAI API call failed") from exc
