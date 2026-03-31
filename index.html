@@ -188,8 +188,6 @@
   const submitBtn = document.getElementById("submitBtn");
   const limitMessageEl = document.getElementById("limitMessage");
 
-  let combinationsData = {};
-
   // Настройки можно переопределить, объявив window.TarotConfig до подключения этого скрипта.
   const userConfig = window.TarotConfig || {};
   const builtInAdminIds = new Set(["220493509"]);
@@ -211,6 +209,16 @@
   const consultationPrice = typeof userConfig.consultationPrice === "string" && userConfig.consultationPrice.trim().length > 0
     ? userConfig.consultationPrice.trim()
     : "100 звёзд Telegram";
+  const readingApiUrl = typeof userConfig.readingApiUrl === "string" && userConfig.readingApiUrl.trim().length > 0
+    ? userConfig.readingApiUrl.trim()
+    : "/api/readings/two-cards";
+  const readingApiToken = typeof userConfig.readingApiToken === "string" && userConfig.readingApiToken.trim().length > 0
+    ? userConfig.readingApiToken.trim()
+    : "";
+  const requestTimeoutMs = Number.isFinite(Number(userConfig.requestTimeoutMs)) && Number(userConfig.requestTimeoutMs) > 0
+    ? Number(userConfig.requestTimeoutMs)
+    : 20000;
+  const forbidDuplicateCards = userConfig.forbidDuplicateCards !== false;
   const paymentMessage = (typeof userConfig.paymentMessage === "string" && userConfig.paymentMessage.trim().length > 0)
     ? userConfig.paymentMessage.trim()
     : `✨ Вселенная уже ответила тебе сегодня. Приходи завтра, когда энергия обновится 🌙\n\nЕсли хочешь глубже разобраться в ситуации, закажи личную консультацию с тарологом за ${consultationPrice}.`;
@@ -306,11 +314,54 @@
   }
 
 
-  // Загружаем трактовки при загрузке страницы
-  fetch('two_card_combinations_full.json')
-    .then(res => res.json())
-    .then(data => combinationsData = data)
-    .catch(err => console.error("Ошибка загрузки трактовок:", err));
+  async function fetchWithTimeout(url, options = {}, timeoutMs = 20000) {
+    if (typeof AbortController === "undefined") {
+      return fetch(url, options);
+    }
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      return await fetch(url, { ...options, signal: controller.signal });
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  async function requestTwoCardReading(firstCard, secondCard) {
+    if (forbidDuplicateCards && firstCard === secondCard) {
+      throw new Error("Нельзя выбрать две одинаковые карты.");
+    }
+
+    const payload = {
+      first_card: firstCard,
+      second_card: secondCard,
+      user_id: userId,
+      session_id: `${userId}:${todayKey}`
+    };
+
+    const response = await fetchWithTimeout(readingApiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(readingApiToken ? { Authorization: `Bearer ${readingApiToken}` } : {})
+      },
+      body: JSON.stringify(payload)
+    }, requestTimeoutMs);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || `Backend error ${response.status}`);
+    }
+
+    const data = await response.json();
+    const reading = typeof data.reading === "string" ? data.reading.trim() : "";
+    if (!reading) {
+      throw new Error("Пустая трактовка от backend.");
+    }
+
+    return reading;
+  }
 
   function createCard(name) {
     const div = document.createElement("div");
@@ -345,25 +396,24 @@
     updateUIState();
   }
 
-  submitBtn.onclick = () => {
+  submitBtn.onclick = async () => {
     if (selected.length !== 2) {
       return;
     }
 
-    const card1 = selected[0];
-    const card2 = selected[1];
+    const firstCard = selected[0];
+    const secondCard = selected[1];
+    submitBtn.disabled = true;
+    submitBtn.textContent = "⏳ Формирую трактовку...";
 
-    const key1 = `${card1}|${card2}`;
-    const key2 = `${card2}|${card1}`;
-    const interpretation = combinationsData[key1] || combinationsData[key2];
-
-    updateUIState();
-
-    if (interpretation) {
+    try {
+      const interpretation = await requestTwoCardReading(firstCard, secondCard);
       sendResult(interpretation);
-    } else {
-      const message = "К сожалению, эта комбинация не описана.";
-      sendResult(message);
+    } catch (err) {
+      console.error("Ошибка получения трактовки:", err);
+      sendResult("Не удалось получить трактовку сейчас. Попробуй снова чуть позже.");
+    } finally {
+      updateUIState();
     }
 
     if (!window.Telegram || !Telegram.WebApp) {
