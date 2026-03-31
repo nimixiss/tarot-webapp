@@ -304,6 +304,10 @@
   }
 
 
+  async function fetchWithTimeout(url, options = {}, timeoutMs = requestTimeoutMs) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
     try {
       return await fetch(url, {
         ...options,
@@ -335,7 +339,14 @@
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(errorText || `Ошибка backend (${response.status})`);
+      let detail = errorText;
+      try {
+        const parsed = JSON.parse(errorText);
+        detail = typeof parsed.detail === "string" ? parsed.detail : errorText;
+      } catch (_) {
+        // ignore non-JSON body
+      }
+      throw new Error(detail || `Ошибка backend (${response.status})`);
     }
 
     const data = await response.json();
@@ -345,6 +356,35 @@
     }
 
     return reading;
+  }
+
+  async function getReadingWithFallback(firstCard, secondCard) {
+    const errors = [];
+
+    if (useRealtimeInterpretation) {
+      try {
+        return await getRealtimeInterpretation(firstCard, secondCard);
+      } catch (error) {
+        console.warn("Realtime трактовка недоступна, пробую backend", error);
+        errors.push(`realtime: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+
+    try {
+      return await getTwoCardReading(firstCard, secondCard);
+    } catch (error) {
+      errors.push(`backend: ${error instanceof Error ? error.message : String(error)}`);
+    }
+
+    if (!useRealtimeInterpretation && interpretationApiUrl) {
+      try {
+        return await getRealtimeInterpretation(firstCard, secondCard);
+      } catch (error) {
+        errors.push(`realtime-fallback: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+
+    throw new Error(errors.join(" | "));
   }
 
   function createCard(name) {
@@ -392,11 +432,12 @@
     submitBtn.textContent = "⏳ Формирую трактовку...";
 
     try {
-      const reading = await getTwoCardReading(firstCard, secondCard);
+      const reading = await getReadingWithFallback(firstCard, secondCard);
       sendResult(reading);
     } catch (err) {
       console.error("Ошибка получения трактовки:", err);
-      sendResult("Не удалось получить трактовку сейчас. Попробуй снова через минуту.");
+      const details = err instanceof Error && err.message ? `\n\nДетали: ${err.message}` : "";
+      sendResult(`Не удалось получить трактовку сейчас. Попробуй снова через минуту.${details}`);
     } finally {
       updateUIState();
     }
