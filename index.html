@@ -15,6 +15,11 @@
     h1 {
       margin-bottom: 20px;
     }
+    .intro { max-width: 460px; margin: 0 auto 16px; line-height: 1.5; color: #d0c4df; }
+    .question-label { display: block; max-width: 460px; margin: 0 auto 8px; text-align: left; font-size: 14px; }
+    .question-label span { opacity: 0.65; font-size: 12px; }
+    textarea { display: block; box-sizing: border-box; width: 100%; max-width: 460px; margin: 0 auto 20px; padding: 14px; color: #fff; background: #292a40; border: 1px solid #565473; border-radius: 12px; font: inherit; resize: vertical; }
+    textarea:focus { outline: 2px solid #b79be4; outline-offset: 1px; }
     .cards {
       display: grid;
       grid-template-columns: repeat(3, minmax(80px, 1fr));
@@ -87,8 +92,11 @@
 </head>
 <body>
 <h1>✨ Выбери 2 карты</h1>
+<p class="intro">Сформулируй вопрос, затем открой две карты. Ответ придёт в чат с ботом.</p>
+<label class="question-label" for="question">Твой вопрос <span>(необязательно)</span></label>
+<textarea id="question" maxlength="350" rows="3" placeholder="Например: Что мне важно понять об этой ситуации?"></textarea>
 <div class="cards" id="cards"></div>
-<button id="submitBtn" disabled>🔮 Узнать трактовку</button>
+<button id="submitBtn" disabled>🔮 Получить трактовку</button>
 <p id="limitMessage" class="limit-message"></p>
 
 <script>
@@ -179,237 +187,29 @@
   const submitBtn = document.getElementById("submitBtn");
   const limitMessageEl = document.getElementById("limitMessage");
 
-  const userConfig = window.TarotConfig || {};
-  const builtInAdminIds = new Set(["220493509"]);
-  const adminIdList = (Array.isArray(userConfig.adminIds) && userConfig.adminIds.length > 0)
-    ? userConfig.adminIds
-    : [];
-  const adminIds = new Set([
-    ...Array.from(builtInAdminIds),
-    ...adminIdList.map(id => String(id))
-  ]);
+  const questionInput = document.getElementById("question");
+  const tg = window.Telegram?.WebApp ?? null;
 
-  const readingApiUrl = typeof userConfig.readingApiUrl === "string" && userConfig.readingApiUrl.trim().length > 0
-    ? userConfig.readingApiUrl.trim()
-    : "/api/readings/two-cards";
-  const readingApiToken = typeof userConfig.readingApiToken === "string" && userConfig.readingApiToken.trim().length > 0
-    ? userConfig.readingApiToken.trim()
-    : "";
-  const forbidDuplicateCards = userConfig.forbidDuplicateCards !== false;
-  const requestTimeoutMs = Number.isFinite(Number(userConfig.requestTimeoutMs)) && Number(userConfig.requestTimeoutMs) > 0
-    ? Number(userConfig.requestTimeoutMs)
-    : 20000;
-
-  const consultationPrice = typeof userConfig.consultationPrice === "string" && userConfig.consultationPrice.trim().length > 0
-    ? userConfig.consultationPrice.trim()
-    : "100 звёзд Telegram";
-  const interpretationApiUrl = typeof userConfig.interpretationApiUrl === "string" && userConfig.interpretationApiUrl.trim().length > 0
-    ? userConfig.interpretationApiUrl.trim()
-    : "";
-  const interpretationApiToken = typeof userConfig.interpretationApiToken === "string" && userConfig.interpretationApiToken.trim().length > 0
-    ? userConfig.interpretationApiToken.trim()
-    : "";
-  const useRealtimeInterpretation = userConfig.useRealtimeInterpretation === true;
-  const tarotSystemPrompt = typeof userConfig.tarotSystemPrompt === "string" && userConfig.tarotSystemPrompt.trim().length > 0
-    ? userConfig.tarotSystemPrompt.trim()
-    : "Ты опытный таролог. Дай тёплую и понятную трактовку комбинации из 2 карт Таро на русском языке. Длина: 500-700 символов. Добавь: 1) общий смысл, 2) как это проявляется сейчас, 3) мягкий практический совет. Избегай категоричных предсказаний и медицинских/юридических утверждений.";
-  const tarotUserPromptTemplate = typeof userConfig.tarotUserPromptTemplate === "string" && userConfig.tarotUserPromptTemplate.trim().length > 0
-    ? userConfig.tarotUserPromptTemplate.trim()
-    : "Карты: {{card1}} и {{card2}}. Сформулируй трактовку по указанным правилам.";
-  const paymentMessage = (typeof userConfig.paymentMessage === "string" && userConfig.paymentMessage.trim().length > 0)
-    ? userConfig.paymentMessage.trim()
-    : `✨ Вселенная уже ответила тебе сегодня. Приходи завтра, когда энергия обновится 🌙\n\nЕсли хочешь глубже разобраться в ситуации, закажи личную консультацию с тарологом за ${consultationPrice}.`;
-
-  function getTodayKey() {
-    const now = new Date();
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    return startOfDay.toISOString().slice(0, 10);
-  }
-
-  function getUserId() {
-    const tg = window.Telegram && Telegram.WebApp ? Telegram.WebApp : null;
-    const id = tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id;
-    return id != null ? String(id) : "anonymous";
-  }
-
-  const userId = getUserId();
-  const todayKey = getTodayKey();
-  const sessionId = `${userId}:${todayKey}`;
-  const isAdmin = adminIds.has(userId);
-
-  function hasDrawsLeft() {
-    return true;
-  }
-
-  function sendResult(text) {
-    if (window.Telegram && Telegram.WebApp) {
-      Telegram.WebApp.sendData(text);
-      Telegram.WebApp.close();
-    } else {
-      alert(text);
-    }
+  if (tg) {
+    tg.ready();
+    tg.expand();
   }
 
   function updateUIState() {
-    submitBtn.textContent = "🔮 Узнать трактовку";
+    submitBtn.textContent = "🔮 Получить трактовку";
     submitBtn.disabled = selected.length !== 2;
     limitMessageEl.textContent = "";
-    cardsContainer.classList.remove("limit-reached");
   }
 
-  function fillPromptTemplate(template, card1, card2) {
-    return template
-      .replaceAll("{{card1}}", card1)
-      .replaceAll("{{card2}}", card2);
-  }
-
-  async function getRealtimeInterpretation(card1, card2) {
-    if (!interpretationApiUrl) {
-      throw new Error("Не задан interpretationApiUrl в window.TarotConfig.");
+  function sendResult(payload) {
+    if (!tg) {
+      limitMessageEl.textContent = "Открой этот расклад через кнопку в Telegram-боте.";
+      return false;
     }
-
-    const userPrompt = fillPromptTemplate(tarotUserPromptTemplate, card1, card2);
-    const response = await fetch(interpretationApiUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(interpretationApiToken ? { Authorization: `Bearer ${interpretationApiToken}` } : {})
-      },
-      body: JSON.stringify({
-        cards: [card1, card2],
-        card1,
-        card2,
-        userId,
-        systemPrompt: tarotSystemPrompt,
-        userPrompt
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error(`API вернул ${response.status}`);
-    }
-
-    const data = await response.json();
-    const text = typeof data.interpretation === "string"
-      ? data.interpretation.trim()
-      : typeof data.text === "string"
-        ? data.text.trim()
-        : "";
-
-    if (!text) {
-      throw new Error("API не вернул текст трактовки.");
-    }
-
-    return text;
-  }
-
-
-  async function fetchWithTimeout(url, options = {}, timeoutMs = requestTimeoutMs) {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), timeoutMs);
-
-    try {
-      return await fetch(url, {
-        ...options,
-        signal: controller.signal
-      });
-    } finally {
-      clearTimeout(timeout);
-    }
-  }
-
-  async function getTwoCardReading(firstCard, secondCard) {
-    if (forbidDuplicateCards && firstCard === secondCard) {
-      throw new Error("Нельзя выбрать две одинаковые карты.");
-    }
-
-    const response = await fetchWithTimeout(readingApiUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(readingApiToken ? { Authorization: `Bearer ${readingApiToken}` } : {})
-      },
-      body: JSON.stringify({
-        first_card: firstCard,
-        second_card: secondCard,
-        user_id: userId,
-        session_id: sessionId
-      })
-    }, requestTimeoutMs);
-
-    if (!response.ok && response.status === 405) {
-      const getUrl = new URL(readingApiUrl, window.location.origin);
-      getUrl.searchParams.set("first_card", firstCard);
-      getUrl.searchParams.set("second_card", secondCard);
-
-      const getResponse = await fetchWithTimeout(getUrl.toString(), {
-        method: "GET",
-        headers: {
-          ...(readingApiToken ? { Authorization: `Bearer ${readingApiToken}` } : {})
-        }
-      }, requestTimeoutMs);
-
-      if (getResponse.ok) {
-        const fallbackData = await getResponse.json();
-        const fallbackReading = typeof fallbackData.reading === "string" ? fallbackData.reading.trim() : "";
-        if (fallbackReading) {
-          return fallbackReading;
-        }
-      }
-    }
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      let detail = `Backend вернул ошибку (${response.status})`;
-      try {
-        const parsed = JSON.parse(errorText);
-        if (typeof parsed.detail === "string" && parsed.detail.trim()) {
-          detail = parsed.detail.trim();
-        }
-      } catch (_) {
-        if (!/<[^>]+>/.test(errorText) && errorText.trim()) {
-          detail = errorText.trim();
-        }
-      }
-      throw new Error(detail || `Ошибка backend (${response.status})`);
-    }
-
-    const data = await response.json();
-    const reading = typeof data.reading === "string" ? data.reading.trim() : "";
-    if (!reading) {
-      throw new Error("Backend вернул пустую трактовку.");
-    }
-
-    return reading;
-  }
-
-  async function getReadingWithFallback(firstCard, secondCard) {
-    const errors = [];
-
-    if (useRealtimeInterpretation) {
-      try {
-        return await getRealtimeInterpretation(firstCard, secondCard);
-      } catch (error) {
-        console.warn("Realtime трактовка недоступна, пробую backend", error);
-        errors.push(`realtime: ${error instanceof Error ? error.message : String(error)}`);
-      }
-    }
-
-    try {
-      return await getTwoCardReading(firstCard, secondCard);
-    } catch (error) {
-      errors.push(`backend: ${error instanceof Error ? error.message : String(error)}`);
-    }
-
-    if (!useRealtimeInterpretation && interpretationApiUrl) {
-      try {
-        return await getRealtimeInterpretation(firstCard, secondCard);
-      } catch (error) {
-        errors.push(`realtime-fallback: ${error instanceof Error ? error.message : String(error)}`);
-      }
-    }
-
-    throw new Error(errors.join(" | "));
+    // The bot owns the OpenAI request. No API secrets or model calls in the browser.
+    tg.sendData(JSON.stringify(payload));
+    tg.close();
+    return true;
   }
 
   function createCard(name) {
@@ -422,11 +222,6 @@
 
     div.appendChild(img);
     div.onclick = () => {
-      if (!hasDrawsLeft()) {
-        sendResult(paymentMessage);
-        return;
-      }
-
       if (selected.length < 2 && img.dataset.flipped === "false") {
         img.src = `images/${cardImageMap[name]}`;
         img.dataset.flipped = "true";
@@ -445,30 +240,19 @@
     updateUIState();
   }
 
-  submitBtn.onclick = async () => {
-    if (selected.length !== 2) {
-      return;
-    }
+  submitBtn.onclick = () => {
+    if (selected.length !== 2) return;
 
-    const firstCard = selected[0];
-    const secondCard = selected[1];
-
-    submitBtn.disabled = true;
-    submitBtn.textContent = "⏳ Формирую трактовку...";
-
-    try {
-      const reading = await getReadingWithFallback(firstCard, secondCard);
-      sendResult(reading);
-    } catch (err) {
-      console.error("Ошибка получения трактовки:", err);
-      const details = err instanceof Error && err.message ? `\n\nДетали: ${err.message}` : "";
-      sendResult(`Не удалось получить трактовку сейчас. Попробуй снова через минуту.${details}`);
-    } finally {
-      updateUIState();
-    }
-
-    if (!window.Telegram || !Telegram.WebApp) {
-      renderCards();
+    const question = questionInput.value.trim().replace(/\\s+/g, " ").slice(0, 350);
+    const ok = sendResult({
+      v: 1,
+      card1: selected[0],
+      card2: selected[1],
+      question
+    });
+    if (ok) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Отправлено в бот";
     }
   };
 
