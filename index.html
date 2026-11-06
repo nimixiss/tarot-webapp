@@ -243,7 +243,7 @@
   submitBtn.onclick = () => {
     if (selected.length !== 2) return;
 
-    const question = questionInput.value.trim().replace(/\\s+/g, " ").slice(0, 350);
+    const question = questionInput.value.trim().replace(/\s+/g, " ").slice(0, 350);
     const ok = sendResult({
       v: 1,
       card1: selected[0],
@@ -259,9 +259,6 @@
   renderCards();
   updateUIState();
 
-  if (!isAdmin) {
-    limitMessageEl.textContent = "";
-  }
 </script>
 </body>
 </html>
