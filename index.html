@@ -7,6 +7,7 @@
   <meta name="description" content="Mystic Tarot — расклады на одну, две и три карты.">
   <title>Mystic Tarot — расклад</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="./config.js"></script>
   <style>
     :root { color-scheme: dark; --bg: #10111b; --surface: #1a1b2a; --panel: #202132;
       --line: rgba(213,189,149,.2); --cream: #f4ebdb; --muted: #b2aebc; --gold: #d7b88c; --plum: #65536e; }
@@ -80,6 +81,16 @@
     .card:disabled:not(.picked){opacity:.44;cursor:default;}
     .card::after {position:absolute;inset:0;content:"";background:linear-gradient(135deg,transparent,#ddc09216,transparent);pointer-events:none;}
     .draw-label {font-size:12px;color:var(--muted);text-align:center;margin-top:8px;}
+    .result-cards {display:flex;justify-content:center;gap:12px;margin:23px 0;align-items:flex-start;}
+    .result-card {min-width:0;max-width:130px;flex:1;text-align:center;}
+    .result-card img {width:100%;aspect-ratio:100/166;object-fit:cover;border:1px solid var(--line);border-radius:9px;display:block;}
+    .result-card small {display:block;color:var(--muted);font-size:11px;line-height:1.4;margin:8px 0 0;}
+    .reading-content {padding:21px;border-radius:18px;background:var(--surface);border:1px solid var(--line);}
+    .reading-question {color:var(--cream);font-size:13px;margin:0 0 18px;}
+    .reading-text {color:var(--cream);white-space:pre-wrap;font-size:16px;line-height:1.65;overflow-wrap:anywhere;}
+    .reading-tools {display:flex;gap:9px;flex-wrap:wrap;margin-top:16px;}
+    .reading-tools .ghost {flex:1 1 140px;}
+    .notice {font-size:12px;color:var(--muted);line-height:1.5;margin-top:15px;}
     .status {min-height:24px;font-size:12px;color:var(--gold);text-align:center;padding:8px 0;}
     footer {padding:30px 0 4px;font-size:11px;color:#8e8c9d;text-align:center;line-height:1.6;}
     @media(max-width:360px){body{padding-left:12px;padding-right:12px}.mode{padding:12px 8px;min-height:128px}
@@ -155,6 +166,22 @@
       </div>
       <button type="button" id="reshuffle" class="ghost" style="width:100%;margin-top:10px">Перемешать заново</button>
       <div id="status" class="status" role="status" aria-live="polite"></div>
+    </section>
+
+    <section id="result" class="view" aria-label="Результат расклада">
+      <div class="eyebrow">Твои карты</div>
+      <h1>Расклад готов.</h1>
+      <div class="result-cards" id="result-cards"></div>
+      <article class="reading-content">
+        <p class="reading-question" id="result-question" hidden></p>
+        <div class="reading-text" id="result-text"></div>
+      </article>
+      <div class="reading-tools">
+        <button type="button" id="copy-result" class="ghost">Скопировать текст</button>
+        <button type="button" id="close-app" class="ghost">Вернуться в чат</button>
+      </div>
+      <div class="notice">Трактовка помогает посмотреть на вопрос под другим углом. Карты не гарантируют события будущего.</div>
+      <button type="button" id="new-reading" class="primary" style="margin-top:20px">Новый расклад</button>
     </section>
   </main>
   <footer>Таро помогает взглянуть на ситуацию с другой стороны. Решения остаются за тобой.</footer>
@@ -256,7 +283,10 @@
       decision: ["Первый путь", "Альтернативный путь", "На что опереться"]
     }
   };
-  const sections = ["home","setup","draw"];
+  const sections = ["home","setup","draw","result"];
+  const configuredApiBase = typeof window.MysticConfig?.apiBaseUrl === "string"
+    ? window.MysticConfig.apiBaseUrl.trim().replace(/\/+$/, "") : "";
+  let lastResult = null;
   let mode = "two";
   let selected = [];
   let deck = [];
@@ -269,7 +299,7 @@
     sections.forEach(function(id) {
       el(id).classList.toggle("active", id === view);
     });
-    el("step").textContent = ({home:"01 / 03",setup:"02 / 03",draw:"03 / 03"})[view];
+    el("step").textContent = ({home:"01 / 04",setup:"02 / 04",draw:"03 / 04",result:"04 / 04"})[view];
     window.scrollTo(0, 0);
   }
 
@@ -360,33 +390,108 @@
     redrawPositions();
   }
 
-  function submitReading() {
+  function displayReading(data, question) {
+    lastResult = { cards: data.cards.slice(), text: data.interpretation, question: question };
+    const container = el("result-cards");
+    container.replaceChildren();
+    data.cards.forEach(function(name, i) {
+      const box = document.createElement("div");
+      box.className = "result-card";
+      const img = document.createElement("img");
+      img.src = "images/" + cardImageMap[name];
+      img.alt = name;
+      const caption = document.createElement("small");
+      caption.textContent = data.positions[i] || name;
+      box.appendChild(img);
+      box.appendChild(caption);
+      container.appendChild(box);
+    });
+    el("result-question").hidden = !question;
+    el("result-question").textContent = question ? "Вопрос: " + question : "";
+    el("result-text").textContent = data.interpretation;
+    show("result");
+  }
+
+  function errorMessage(status, detail) {
+    if (status === 401) return "Для защищённого расклада открой приложение через кнопку под сообщением бота. Отправь /start и нажми «Открыть Mystic Tarot».";
+    if (status === 429 && detail === "daily_limit") return "Сегодняшний расклад этого типа уже использован. Можно выбрать другой формат или вернуться завтра.";
+    if (status === 429) return "Слишком много запросов. Попробуй позже.";
+    if (status === 409) return "Трактовка уже создаётся. Дождись ответа перед повторной попыткой.";
+    if (status === 503 && detail === "not_launched") return "Новый способ получения трактовок пока настраивается.";
+    if (status === 503) return "Сейчас не удалось получить трактовку. Повтори попытку позже — лимит за ошибку не списывается.";
+    return "Не удалось получить трактовку. Проверь соединение и попробуй ещё раз.";
+  }
+
+  async function submitReading() {
     if (submitting || selected.length !== countForMode[mode]) return;
-    if (!tg || typeof tg.sendData !== "function") {
-      el("status").textContent = "Открой расклад через кнопку в Telegram-боте.";
+    if (!tg) {
+      el("status").textContent = "Открой расклад внутри Telegram.";
       return;
     }
-    submitting = true;
-    redrawPositions();
-    el("reshuffle").disabled = true;
+
     const payload = {
-      v: 2,
       mode: mode,
       layout: currentLayout(),
       question: el("question").value.trim().replace(/\s+/g, " ").slice(0, 350),
       cards: selected.slice()
     };
-    el("status").textContent = "Передаём карты боту. Трактовка появится в чате.";
+
+    // The older keyboard launch has no signed initData. Keep the existing
+    // working chat fallback until the inline Mini App launcher is deployed.
+    if (!tg.initData) {
+      if (typeof tg.sendData !== "function") {
+        el("status").textContent = "Открой расклад через сообщение от бота: /start.";
+        return;
+      }
+      try {
+        tg.sendData(JSON.stringify(payload));
+      } catch (_error) {
+        el("status").textContent = "Не удалось отправить карты боту. Попробуй снова.";
+      }
+      return;
+    }
+
+    if (!configuredApiBase || !configuredApiBase.startsWith("https://")) {
+      el("status").textContent = "Функция трактовки внутри приложения ещё настраивается.";
+      return;
+    }
+
+    submitting = true;
+    redrawPositions();
+    el("reshuffle").disabled = true;
+    el("status").textContent = "Составляем трактовку твоих карт…";
+    const controller = new AbortController();
+    const timeout = setTimeout(function(){ controller.abort(); }, 55000);
     try {
-      // Only keyboard-launched Telegram Mini Apps can sendData; the client closes on send.
-      tg.sendData(JSON.stringify(payload));
+      const response = await fetch(configuredApiBase + "/api/readings", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Telegram-Init-Data": tg.initData
+        },
+        body: JSON.stringify(payload),
+        signal: controller.signal
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        el("status").textContent = errorMessage(response.status, data?.detail);
+        return;
+      }
+      if (!data || typeof data.interpretation !== "string" ||
+          !Array.isArray(data.cards) || !Array.isArray(data.positions)) {
+        throw new Error("bad_response");
+      }
+      displayReading(data, payload.question);
     } catch (_error) {
+      el("status").textContent = "Связь прервалась. Возможно, ответ уже создан — проверь соединение перед повтором.";
+    } finally {
+      clearTimeout(timeout);
       submitting = false;
       el("reshuffle").disabled = false;
       redrawPositions();
-      el("status").textContent = "Не удалось отправить расклад. Попробуй ещё раз.";
     }
   }
+
 
   el("start").addEventListener("click", function(){show("setup");});
   el("back-home").addEventListener("click", function(){show("home");});
@@ -394,6 +499,24 @@
   el("to-draw").addEventListener("click", function(){resetCards();show("draw");});
   el("reshuffle").addEventListener("click", function(){resetCards();});
   el("submit").addEventListener("click", submitReading);
+  el("new-reading").addEventListener("click", function(){
+    lastResult = null;
+    show("setup");
+  });
+  el("close-app").addEventListener("click", function(){
+    if (tg && typeof tg.close === "function") tg.close();
+  });
+  el("copy-result").addEventListener("click", async function(){
+    if (!lastResult) return;
+    const fullText = [lastResult.cards.join(" · "), lastResult.question, lastResult.text]
+      .filter(Boolean).join("\n\n");
+    try {
+      await navigator.clipboard.writeText(fullText);
+      el("copy-result").textContent = "Скопировано";
+    } catch (_error) {
+      el("copy-result").textContent = "Копирование недоступно";
+    }
+  });
   el("question").addEventListener("input", function(){
     el("counter").textContent = String(el("question").value.length);
   });

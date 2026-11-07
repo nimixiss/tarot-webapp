@@ -24,6 +24,13 @@ assert(fs.existsSync("images/rubashka.png"), "Card back image missing");
 });
 assert(html.includes('src="https://telegram.org/js/telegram-web-app.js"'));
 assert(html.includes("tg.sendData(JSON.stringify(payload))"));
+assert(html.includes('id="result"'), "In-app reading result screen missing");
+assert(html.includes("configuredApiBase + \"/api/readings\""), "Backend fetch missing");
+assert(html.includes('"X-Telegram-Init-Data": tg.initData'), "Signed Telegram auth header missing");
+assert(html.includes('id="copy-result"'), "Optional copy action missing");
+const publicConfig = fs.readFileSync("config.js", "utf8");
+assert(!/(BOT_TOKEN|OPENAI_API_KEY|sk-proj-)/i.test(publicConfig), "Secret in public config");
+assert(publicConfig.includes("apiBaseUrl"), "API base URL placeholder missing");
 assert(!/(OPENAI_API_KEY|BOT_TOKEN|sk-proj-)/i.test(html), "Secret reference in public WebApp");
 
 console.log("Mini App: JS parses, cards and assets present, no embedded secrets.");
