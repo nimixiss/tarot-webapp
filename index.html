@@ -97,33 +97,72 @@
       .cards{gap:7px}.brand{font-size:13px}}
     @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
   </style>
+  <link rel="stylesheet" href="./uzel-plus.css">
 </head>
 <body>
 <div class="shell">
-  <header>
-    <div class="identity"><div class="emblem" aria-hidden="true">☾</div>
-      <div><div class="brand">MYSTIC TAROT</div><div class="subtitle">Ритуал осмысления</div></div>
-    </div>
-    <div class="step" id="step">01 / 03</div>
+  <header class="screen-header">
+    <div class="identity"><span class="emblem" aria-hidden="true"></span>
+      <div><div class="brand">Mystic Tarot</div><div class="subtitle" id="screen-label">ТВОЯ НИТЬ</div></div>
+    </div><span class="step" id="step" aria-hidden="true">01 / 04</span>
   </header>
 
   <main>
-    <section id="home" class="view active" aria-label="Начало расклада">
-      <div class="hero">
-        <div class="eyebrow">Твой расклад</div>
-        <h1>Найди новый<br><span class="gold">взгляд на ситуацию.</span></h1>
-        <p>Задай вопрос, выбери карты и узнай, как их сочетание можно понять именно в твоей ситуации.</p>
-        <button type="button" class="primary" id="start">Начать расклад</button>
+    <section id="home" class="view active" aria-label="Твоя нить">
+      <div class="home-heading">
+        <div class="date" id="home-date">Сегодня</div>
+        <div class="heading-row">
+          <h1>Твоя нить</h1>
+          <button type="button" class="link-button" id="view-all">Все узлы</button>
+        </div>
       </div>
-      <div class="section"><h2>У каждой карты — своё место</h2>
-        <p>Одна карта поможет обозначить главное. Две раскроют взаимодействие. Три позволят взглянуть на вопрос глубже.</p>
-        <div class="eyebrow">Символы, а не предсказания</div>
+      <div class="thread-map" aria-label="Нить раскладов">
+        <img class="thread-line" src="./assets/uzel-thread.svg" alt="" aria-hidden="true">
+        <button type="button" class="thread-point" id="thread-recent">
+          <img src="./assets/uzel-knot.svg" alt="">
+          <strong id="thread-recent-name">Первый узел</strong>
+          <small id="thread-recent-meta">начни историю</small>
+        </button>
+        <button type="button" class="thread-point" id="thread-today">
+          <img src="./assets/uzel-knot.svg" alt="">
+          <strong>Карта дня</strong>
+          <small>сегодня</small>
+        </button>
+        <button type="button" class="thread-point open" id="thread-new">
+          <img src="./assets/uzel-open.svg" alt="">
+          <strong>Новый вопрос</strong>
+          <small>ждёт ответа</small>
+        </button>
+      </div>
+      <div class="today-tile">
+        <div class="today-info">
+          <div class="eyebrow">Карта дня</div>
+          <h2 id="today-title">Твоя карта ждёт</h2>
+          <p id="today-description">Открой одну карту и посмотри, на что стоит обратить внимание сегодня.</p>
+          <button type="button" class="today-action" id="today-link">Открыть карту дня</button>
+        </div>
+        <button type="button" class="today-art" id="daily-card-button" aria-label="Открыть карту дня">
+          <img src="./assets/uzel-card-back.svg" id="today-image" alt="Рубашка карты Таро">
+        </button>
+      </div>
+      <div class="ask-panel">
+        <label for="home-question">НОВЫЙ ВОПРОС</label>
+        <textarea id="home-question" rows="1" maxlength="350" placeholder="Что тебя держит?"></textarea>
+      </div>
+      <div class="home-modes" role="group" aria-label="Формат расклада">
+        <button type="button" data-home-mode="one" aria-pressed="false">1 карта</button>
+        <button type="button" data-home-mode="two" aria-pressed="false">2 карты</button>
+        <button type="button" data-home-mode="three" aria-pressed="true">3 карты</button>
+        <button type="button" disabled aria-label="Да или нет: скоро">Да / нет</button>
+      </div>
+      <div class="home-actions">
+        <button type="button" class="primary" id="start">Разложить три карты</button>
       </div>
     </section>
 
     <section id="setup" class="view" aria-label="Настройка расклада">
-      <div class="eyebrow">Выбери глубину</div>
-      <h1>Сколько карт откроем?</h1>
+      <div class="eyebrow">РАСКЛАД · НОВЫЙ ВОПРОС</div>
+      <h1>О чём спросить?</h1>
       <div class="mode-grid" role="group" aria-label="Число карт">
         <button type="button" class="mode" data-mode="one" aria-pressed="false">
           <span class="symbol">Ⅰ</span><strong>Одна карта</strong><small>Главная тема</small>
@@ -151,27 +190,37 @@
         <button type="button" class="ghost" id="back-home">Назад</button>
         <button type="button" class="primary" id="to-draw">Перейти к картам</button>
       </div>
-      <div class="hint">Вопрос будет передан AI-модели для трактовки. Не указывай личные данные, которые не хочешь передавать.</div>
+      <div class="question-presets">
+        <div class="eyebrow">Подсказки</div>
+        <div class="preset-buttons">
+          <button type="button" data-question-preset="career">Работа</button>
+          <button type="button" data-question-preset="relationships">Отношения</button>
+          <button type="button" data-question-preset="decision">Решение</button>
+        </div>
+        <p class="hint intro-hint">Чем конкретнее вопрос, тем точнее ответ.</p>
+      </div>
+      <div class="hint">Вопрос передаётся AI-модели для трактовки. Не указывай данные, которые не хочешь передавать.</div>
     </section>
 
     <section id="draw" class="view" aria-label="Выбор карт">
-      <div class="eyebrow">Выбор карт</div>
-      <h1>Доверься моменту.</h1>
+      <div class="eyebrow">РАСКЛАД · ХОД</div>
+      <h1>Сними карты с нити</h1>
+      <p id="draw-question" aria-live="polite"></p>
       <p id="draw-description">Выбери две карты из колоды. Каждая откроется после нажатия.</p>
-      <div id="positions" class="position-list" aria-live="polite"></div>
       <div id="cards" class="cards" aria-label="Закрытые карты Таро"></div>
+      <div id="positions" class="position-list" aria-live="polite"></div>
       <div id="selection-status" class="draw-label" aria-live="polite">Выбрано 0 / 2</div>
       <div class="actions">
         <button type="button" class="ghost" id="back-setup">Назад</button>
-        <button type="button" class="primary" id="submit" disabled>Получить трактовку</button>
+        <button type="button" class="primary" id="submit" disabled>Открой карты</button>
       </div>
-      <button type="button" id="reshuffle" class="ghost" style="width:100%;margin-top:10px">Перемешать заново</button>
+      <button type="button" id="reshuffle" class="ghost" style="width:100%;margin-top:10px">Перемешать карты</button>
       <div id="status" class="status" role="status" aria-live="polite"></div>
     </section>
 
     <section id="result" class="view" aria-label="Результат расклада">
-      <div class="eyebrow">Твои карты</div>
-      <h1>Расклад готов.</h1>
+      <div class="eyebrow">РАСКЛАД · ТРАКТОВКА</div>
+      <h1>Нить расклада</h1>
       <div class="result-cards" id="result-cards"></div>
       <article class="reading-content">
         <p class="reading-question" id="result-question" hidden></p>
@@ -184,9 +233,31 @@
       <div class="notice">Трактовка помогает посмотреть на вопрос под другим углом. Карты не гарантируют события будущего.</div>
       <button type="button" id="new-reading" class="primary" style="margin-top:20px">Новый расклад</button>
     </section>
+    <section id="history" class="view" aria-label="История раскладов">
+      <div class="eyebrow">Твоя история</div>
+      <h1>Нить вопросов</h1>
+      <p class="history-intro">Здесь остаются расклады, которые ты открыла на этом устройстве. Пока история не синхронизируется между устройствами.</p>
+      <div id="history-list" class="history-list"></div>
+    </section>
+
+    <section id="tarologist" class="view" aria-label="Таролог">
+      <div class="eyebrow">Разговор с человеком</div>
+      <h1>Нужен таролог?</h1>
+      <div class="tarologist-tile">
+        <h2>Иногда нужен не новый расклад, а живой разговор.</h2>
+        <p>Вернись в чат с ботом, чтобы посмотреть доступные способы связи и консультации.</p>
+        <button type="button" class="primary" id="return-to-bot">Вернуться в чат</button>
+      </div>
+    </section>
   </main>
   <footer>Таро помогает взглянуть на ситуацию с другой стороны. Решения остаются за тобой.</footer>
 </div>
+<nav class="tab-bar" aria-label="Основная навигация"><div class="tab-bar-inner">
+  <button type="button" class="tab-button" data-tab="home" aria-selected="true"><img alt="" src="./assets/nav-today.svg">Сегодня</button>
+  <button type="button" class="tab-button" data-tab="setup" aria-selected="false"><img alt="" src="./assets/nav-spread.svg">Расклад</button>
+  <button type="button" class="tab-button" data-tab="history" aria-selected="false"><img alt="" src="./assets/nav-history.svg">История</button>
+  <button type="button" class="tab-button" data-tab="tarologist" aria-selected="false"><img alt="" src="./assets/nav-tarot.svg">Таролог</button>
+</div></nav>
 
 <script>
   "use strict";
@@ -285,11 +356,11 @@
       career: ["Текущая работа", "Шанс другого предложения", "Что принесёт смена"]
     }
   };
-  const sections = ["home","setup","draw","result"];
+  const sections = ["home","setup","draw","result","history","tarologist"];
   const configuredApiBase = typeof window.MysticConfig?.apiBaseUrl === "string"
     ? window.MysticConfig.apiBaseUrl.trim().replace(/\/+$/, "") : "";
   let lastResult = null;
-  let mode = "two";
+  let mode = "three";
   let selected = [];
   let deck = [];
   let submitting = false;
@@ -302,6 +373,7 @@
       el(id).classList.toggle("active", id === view);
     });
     el("step").textContent = ({home:"01 / 04",setup:"02 / 04",draw:"03 / 04",result:"04 / 04"})[view];
+    if (typeof window.uzelOnShow === "function") window.uzelOnShow(view);
     window.scrollTo(0, 0);
   }
 
@@ -313,6 +385,7 @@
     });
     el("layout-wrap").hidden = mode !== "three";
     if (mode !== "three") el("layout").value = "standard";
+    if (typeof window.uzelSyncHomeModes === "function") window.uzelSyncHomeModes(mode);
   }
 
   function currentLayout() {
@@ -348,12 +421,13 @@
     positions().forEach(function(name, index) {
       const chip = document.createElement("span");
       chip.className = "position" + (index < selected.length ? " done" : "");
-      chip.textContent = (index+1) + ". " + name;
+      chip.textContent = name;
       el("positions").appendChild(chip);
     });
     const required = countForMode[mode];
     el("selection-status").textContent = "Выбрано " + selected.length + " / " + required;
     el("submit").disabled = selected.length !== required || submitting;
+    el("submit").textContent = selected.length === required ? "Читать расклад" : "Открой все " + (required === 1 ? "карты" : required === 2 ? "две карты" : "три карты");
     el("draw-description").textContent =
       "Выбери " + (required === 1 ? "одну карту" : required === 2 ? "две карты" : "три карты") +
       ". Карты откроются по мере выбора.";
@@ -361,19 +435,26 @@
 
   function resetCards() {
     selected = [];
-    deck = shuffledNames().slice(0, 9);
+    deck = shuffledNames().slice(0, countForMode[mode]);
+    el("cards").dataset.count = String(countForMode[mode]);
+    const q=el("question").value.trim();
+    el("draw-question").textContent=q? "«"+q+"»" : "Открой карты по одной, слева направо.";
     el("cards").replaceChildren();
-    deck.forEach(function(name) {
+    deck.forEach(function(name, index) {
       const card = document.createElement("button");
       card.type = "button";
       card.className = "card";
-      card.setAttribute("aria-label", "Открыть карту");
+      card.setAttribute("aria-label", "Открыть карту " + (index+1));
       const image = document.createElement("img");
-      image.src = "images/rubashka.png";
+      image.src = "assets/uzel-card-back.svg";
       image.alt = "Закрытая карта";
       card.appendChild(image);
+      const nameTag=document.createElement("span");
+      nameTag.className="card-face-title";
+      nameTag.textContent=name.replace(/\s*\([^)]*\)/g,"");
+      card.appendChild(nameTag);
       card.addEventListener("click", function() {
-        if (selected.length >= countForMode[mode] || card.disabled) return;
+        if (selected.length >= countForMode[mode] || card.disabled || index !== selected.length) return;
         card.classList.add("picked");
         card.disabled = true;
         image.src = "images/" + cardImageMap[name];
@@ -394,6 +475,7 @@
 
   function displayReading(data, question) {
     lastResult = { cards: data.cards.slice(), text: data.interpretation, question: question };
+    if (typeof window.uzelSaveReading === "function") window.uzelSaveReading(data);
     const container = el("result-cards");
     container.replaceChildren();
     data.cards.forEach(function(name, i) {
@@ -525,7 +607,8 @@
   document.querySelectorAll(".mode").forEach(function(button) {
     button.addEventListener("click", function(){setMode(button.dataset.mode);});
   });
-  setMode("two");
+  setMode("three");
 </script>
+<script src="./uzel-plus.js"></script>
 </body>
 </html>
