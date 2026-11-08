@@ -7,6 +7,7 @@
   const countNames = {one:"одну карту",two:"две карты",three:"три карты"};
   const namesForMode = {one:"Открыть одну карту",two:"Разложить две карты",three:"Разложить три карты"};
   const today = new Date();
+  let dailyFlowPending = false;
 
   function safeLoad() {
     try {
@@ -25,6 +26,7 @@
         savedAt: new Date().toISOString(),
         id: String(Date.now()) + "-" + Math.random().toString(36).slice(2,8),
         cards: lastResult.cards.slice(),
+        kind: dailyFlowPending ? "daily" : "spread",
         question: lastResult.question || "",
         interpretation: lastResult.text || "",
         positions: (window.uzelLatestPositions || []).slice()
@@ -34,6 +36,7 @@
     } catch (_) {
       // Private browsing or disabled storage: the reading still works.
     }
+    dailyFlowPending = false;
     updateToday();
     updateThread();
   }
@@ -57,7 +60,7 @@
     if (dateNode) {
       dateNode.textContent = new Intl.DateTimeFormat("ru-RU",{weekday:"long",day:"numeric",month:"long"}).format(today);
     }
-    const daily = safeLoad().find(x=>x.cards.length===1 && isToday(x.savedAt));
+    const daily = safeLoad().find(x=>x.kind==="daily" && isToday(x.savedAt));
     const dailyArt = el("today-image");
     const dailyTitle = el("today-title");
     const dailyDescription = el("today-description");
@@ -125,7 +128,7 @@
       title.textContent=item.question || (item.cards.length===1?"Одна карта":"Расклад на "+item.cards.length+" карты");
       const subtitle=document.createElement("small");
       const date=new Date(item.savedAt);
-      subtitle.textContent=item.cards.length+" карт. · "+(Number.isNaN(date.getTime())?"":date.toLocaleDateString("ru-RU"));
+      subtitle.textContent=item.cards.length+" "+(item.cards.length===1?"карта":item.cards.length===2?"карты":"карты")+" · "+(Number.isNaN(date.getTime())?"":date.toLocaleDateString("ru-RU"));
       middle.append(title,subtitle);
       const arrow=document.createElement("span");arrow.className="arrow";arrow.textContent="›";
       row.append(image,middle,arrow);
@@ -151,6 +154,7 @@
       draw:"РАСКЛАД · ВЫБОР КАРТ",result:"РАСКЛАД · ТРАКТОВКА",
       history:"ИСТОРИЯ",tarologist:"ТАРОЛОГ"
     })[view] || "MYSTIC TAROT";
+    if (["home","setup","history","tarologist"].includes(view)) dailyFlowPending = false;
     if (view==="home"){updateToday();updateThread();}
     if (view==="history") renderHistory();
   };
@@ -196,8 +200,9 @@
   const dailyLink=el("today-link");
   if (dailyLink) dailyLink.addEventListener("click",openToday);
   function openToday() {
-    const daily=safeLoad().find(x=>x.cards.length===1&&isToday(x.savedAt));
+    const daily=safeLoad().find(x=>x.kind==="daily"&&isToday(x.savedAt));
     if (daily) { openHistoryItem(daily);return; }
+    dailyFlowPending = true;
     setMode("one");
     el("question").value="Что мне важно заметить сегодня?";
     el("counter").textContent=String(el("question").value.length);
