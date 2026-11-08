@@ -372,7 +372,7 @@
     sections.forEach(function(id) {
       el(id).classList.toggle("active", id === view);
     });
-    el("step").textContent = ({home:"01 / 04",setup:"02 / 04",draw:"03 / 04",result:"04 / 04"})[view];
+    el("step").textContent = ({home:"01 / 04",setup:"02 / 04",draw:"03 / 04",result:"04 / 04",history:"",tarologist:""})[view] || "";
     if (typeof window.uzelOnShow === "function") window.uzelOnShow(view);
     window.scrollTo(0, 0);
   }
