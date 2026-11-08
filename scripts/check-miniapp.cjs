@@ -22,6 +22,9 @@ assert(fs.existsSync("images/rubashka.png"), "Card back image missing");
 ["one", "two", "three"].forEach(mode => {
   assert(html.includes('data-mode="' + mode + '"'), "Missing mode " + mode);
 });
+assert(html.includes('<option value="career">'), "Career spread option missing");
+assert(html.includes('career: ["Текущая работа", "Шанс другого предложения", "Что принесёт смена"]'),
+  "Career layout positions must match backend");
 assert(html.includes('src="https://telegram.org/js/telegram-web-app.js"'));
 assert(html.includes("tg.sendData(JSON.stringify(payload))"));
 assert(html.includes('id="result"'), "In-app reading result screen missing");
