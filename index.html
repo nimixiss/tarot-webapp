@@ -184,7 +184,7 @@
             <strong>Работа</strong><small>Сейчас · Новая возможность · Переход</small>
           </button>
         </div>
-        <select id="layout" class="sr-only-select" aria-label="Схема трёх карт" tabindex="-1">
+        <select id="layout" class="sr-only-select" aria-label="Схема трёх карт" tabindex="-1" aria-hidden="true">
           <option value="standard">Ситуация — влияние — следующий шаг</option>
           <option value="relationships">Я — другой человек — отношения</option>
           <option value="decision">Путь А — путь Б — на что опереться</option>
@@ -363,6 +363,39 @@
   const el = function(id) { return document.getElementById(id); };
   const cardNames = Object.keys(cardImageMap);
 
+  function validateQuestion(inputId, errorId) {
+    const input = el(inputId);
+    const error = el(errorId);
+    const valid = Boolean(input && input.value.trim());
+    if (error) error.hidden = valid;
+    if (input) {
+      if (valid) input.removeAttribute("aria-invalid");
+      else {
+        input.setAttribute("aria-invalid", "true");
+        input.focus({preventScroll:true});
+        input.scrollIntoView({block:"center",behavior:"smooth"});
+      }
+    }
+    return valid;
+  }
+
+  function clearQuestionError(inputId, errorId) {
+    const input = el(inputId), error = el(errorId);
+    if (input && input.value.trim()) {
+      input.removeAttribute("aria-invalid");
+      if (error) error.hidden = true;
+    }
+  }
+
+  function setLayout(next) {
+    const select = el("layout");
+    if (!select || !layouts.three[next]) return;
+    select.value = next;
+    document.querySelectorAll(".layout-option").forEach(function(button) {
+      button.setAttribute("aria-pressed", String(button.dataset.layout === next));
+    });
+  }
+
   function show(view) {
     sections.forEach(function(id) {
       el(id).classList.toggle("active", id === view);
@@ -379,7 +412,7 @@
       button.setAttribute("aria-pressed", String(button.dataset.mode === mode));
     });
     el("layout-wrap").hidden = mode !== "three";
-    if (mode !== "three") el("layout").value = "standard";
+    if (mode !== "three") setLayout("standard");
     if (typeof window.uzelSyncHomeModes === "function") window.uzelSyncHomeModes(mode);
   }
 
@@ -503,6 +536,11 @@
 
   async function submitReading() {
     if (submitting || selected.length !== countForMode[mode]) return;
+    if (!el("question").value.trim()) {
+      show("setup");
+      validateQuestion("question", "question-error");
+      return;
+    }
     if (!tg) {
       el("status").textContent = "Открой расклад внутри Telegram.";
       return;
@@ -573,17 +611,21 @@
 
 
   el("start").addEventListener("click", function(){
-    const homeValue=el("home-question").value.trim();
-    if(homeValue){
-      el("question").value=homeValue.slice(0,350);
-      el("counter").textContent=String(el("question").value.length);
-    }
+    if (!validateQuestion("home-question", "home-question-error")) return;
+    const homeValue = el("home-question").value.trim();
+    el("question").value = homeValue.slice(0,350);
+    el("counter").textContent = String(el("question").value.length);
+    clearQuestionError("question", "question-error");
     resetCards();
     show("draw");
   });
   el("back-home").addEventListener("click", function(){show("home");});
   el("back-setup").addEventListener("click", function(){show("setup");});
-  el("to-draw").addEventListener("click", function(){resetCards();show("draw");});
+  el("to-draw").addEventListener("click", function(){
+    if (!validateQuestion("question", "question-error")) return;
+    resetCards();
+    show("draw");
+  });
   el("reshuffle").addEventListener("click", function(){resetCards();});
   el("submit").addEventListener("click", submitReading);
   el("new-reading").addEventListener("click", function(){
@@ -606,7 +648,15 @@
   });
   el("question").addEventListener("input", function(){
     el("counter").textContent = String(el("question").value.length);
+    clearQuestionError("question", "question-error");
   });
+  el("home-question").addEventListener("input", function(){
+    clearQuestionError("home-question", "home-question-error");
+  });
+  document.querySelectorAll(".layout-option").forEach(function(button) {
+    button.addEventListener("click", function(){setLayout(button.dataset.layout);});
+  });
+  setLayout("standard");
   document.querySelectorAll(".mode").forEach(function(button) {
     button.addEventListener("click", function(){setMode(button.dataset.mode);});
   });
