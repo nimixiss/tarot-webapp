@@ -98,6 +98,7 @@
     @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
   </style>
   <link rel="stylesheet" href="./uzel-plus.css">
+  <link rel="stylesheet" href="./uzel-v2.css">
 </head>
 <body>
 <div class="shell">
@@ -108,56 +109,48 @@
   </header>
 
   <main>
-    <section id="home" class="view active" aria-label="Твоя нить">
-      <div class="home-heading">
-        <div class="date" id="home-date">Сегодня</div>
-        <div class="heading-row">
-          <h1>Твоя нить</h1>
-          <button type="button" class="link-button" id="view-all">Все узлы</button>
-        </div>
+    <section id="home" class="view active" aria-label="Сегодня">
+      <div class="home-datebar">
+        <time id="home-date">Сегодня</time>
+        <span class="date-note">новая страница</span>
       </div>
-      <div class="thread-map" aria-label="Нить раскладов">
-        <img class="thread-line" src="./assets/uzel-thread.svg" alt="" aria-hidden="true">
-        <button type="button" class="thread-point" id="thread-recent">
-          <img src="./assets/uzel-knot.svg" alt="">
-          <strong id="thread-recent-name">Первый узел</strong>
-          <small id="thread-recent-meta">начни историю</small>
-        </button>
-        <button type="button" class="thread-point" id="thread-today">
-          <img src="./assets/uzel-knot.svg" alt="">
-          <strong>Карта дня</strong>
-          <small>сегодня</small>
-        </button>
-        <button type="button" class="thread-point open" id="thread-new">
-          <img src="./assets/uzel-open.svg" alt="">
-          <strong>Новый вопрос</strong>
-          <small>ждёт ответа</small>
-        </button>
-      </div>
-      <div class="today-tile">
+      <div class="today-tile" id="today-tile">
         <div class="today-info">
           <div class="eyebrow">Карта дня</div>
-          <h2 id="today-title">Твоя карта ждёт</h2>
-          <p id="today-description">Открой одну карту и посмотри, на что стоит обратить внимание сегодня.</p>
-          <button type="button" class="today-action" id="today-link">Открыть карту дня</button>
+          <h1 id="today-title">Что скажет сегодня?</h1>
+          <p id="today-description">Карта уже на столе. Коснись её — и она откроется.</p>
+          <button type="button" class="today-action" id="today-link">Открыть карту →</button>
         </div>
         <button type="button" class="today-art" id="daily-card-button" aria-label="Открыть карту дня">
-          <img src="./assets/uzel-card-back.svg" id="today-image" alt="Рубашка карты Таро">
+          <img class="deck-behind" src="./assets/journal-card-back.svg" alt="" aria-hidden="true">
+          <img src="./assets/journal-card-back.svg" id="today-image" alt="Закрытая карта Таро">
         </button>
+        <img class="daily-wide-image" id="today-wide-image" alt="" aria-hidden="true">
       </div>
       <div class="ask-panel">
-        <label for="home-question">НОВЫЙ ВОПРОС</label>
-        <textarea id="home-question" rows="1" maxlength="350" placeholder="Что тебя держит?"></textarea>
+        <label class="visually-hidden" for="home-question">Новый вопрос</label>
+        <textarea id="home-question" rows="1" maxlength="350" placeholder="О чём хочешь спросить?"></textarea>
       </div>
-      <div class="home-modes" role="group" aria-label="Формат расклада">
-        <button type="button" data-home-mode="one" aria-pressed="false">1 карта</button>
-        <button type="button" data-home-mode="two" aria-pressed="false">2 карты</button>
-        <button type="button" data-home-mode="three" aria-pressed="true">3 карты</button>
-        <button type="button" disabled aria-label="Да или нет: скоро">Да / нет</button>
+      <div class="home-modes" role="group" aria-label="Число карт">
+        <button type="button" data-home-mode="one" aria-pressed="false">Одна карта</button>
+        <button type="button" data-home-mode="two" aria-pressed="false">Две</button>
+        <button type="button" data-home-mode="three" aria-pressed="true">Три</button>
+        <button type="button" disabled title="В разработке" aria-label="Да или нет: пока недоступно">Да или нет</button>
       </div>
       <div class="home-actions">
         <button type="button" class="primary" id="start">Разложить три карты</button>
       </div>
+      <section class="week-section" aria-label="Нить недели">
+        <div class="week-heading">
+          <span>Нить недели</span>
+          <button type="button" id="view-all" class="link-button">вся история</button>
+        </div>
+        <div class="week-track">
+          <img class="week-thread-light" src="./assets/journal-week-thread.svg" alt="" aria-hidden="true">
+          <img class="week-thread-dark" src="./assets/night-week-thread.svg" alt="" aria-hidden="true">
+          <div class="week-days" id="week-days"></div>
+        </div>
+      </section>
     </section>
 
     <section id="setup" class="view" aria-label="Настройка расклада">
@@ -253,10 +246,10 @@
   <footer>Таро помогает взглянуть на ситуацию с другой стороны. Решения остаются за тобой.</footer>
 </div>
 <nav class="tab-bar" aria-label="Основная навигация"><div class="tab-bar-inner">
-  <button type="button" class="tab-button" data-tab="home" aria-selected="true"><img alt="" src="./assets/nav-today.svg">Сегодня</button>
-  <button type="button" class="tab-button" data-tab="setup" aria-selected="false"><img alt="" src="./assets/nav-spread.svg">Расклад</button>
-  <button type="button" class="tab-button" data-tab="history" aria-selected="false"><img alt="" src="./assets/nav-history.svg">История</button>
-  <button type="button" class="tab-button" data-tab="tarologist" aria-selected="false"><img alt="" src="./assets/nav-tarot.svg">Таролог</button>
+  <button type="button" class="tab-button" data-tab="home" aria-selected="true">Сегодня</button>
+  <button type="button" class="tab-button" data-tab="setup" aria-selected="false">Расклады</button>
+  <button type="button" class="tab-button" data-tab="history" aria-selected="false">Нить</button>
+  <button type="button" class="tab-button" data-tab="tarologist" aria-selected="false">Таролог</button>
 </div></nav>
 
 <script>
@@ -577,7 +570,13 @@
   }
 
 
-  el("start").addEventListener("click", function(){show("setup");});
+  el("start").addEventListener("click", function(){
+    const q = el("home-question").value.trim();
+    el("question").value = q.slice(0,350);
+    el("counter").textContent = String(el("question").value.length);
+    if(mode === "three") el("layout").value = "standard";
+    resetCards(); show("draw");
+  });
   el("back-home").addEventListener("click", function(){show("home");});
   el("back-setup").addEventListener("click", function(){show("setup");});
   el("to-draw").addEventListener("click", function(){resetCards();show("draw");});
@@ -610,5 +609,6 @@
   setMode("three");
 </script>
 <script src="./uzel-plus.js"></script>
+<script src="./uzel-v2.js"></script>
 </body>
 </html>
