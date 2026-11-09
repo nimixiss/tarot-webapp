@@ -131,7 +131,7 @@
         const q=(latest.question||"").toLowerCase();
         title.textContent= q.includes("работ")||q.includes("карьер")?"работа":
           q.includes("люб")||q.includes("отнош")?"любовь":
-          latest.kind==="daily"?"карта дня":"расклад";
+          latest.kind==="daily"?"карта":"расклад";
       }
       const mark=document.createElement("span");
       mark.className="week-mark"+(latest?"":" dot");
