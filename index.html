@@ -98,6 +98,7 @@
     @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
   </style>
   <link rel="stylesheet" href="./uzel-plus.css">
+  <link rel="stylesheet" href="./uzel-v2.css">
 </head>
 <body>
 <div class="shell">
@@ -108,55 +109,40 @@
   </header>
 
   <main>
-    <section id="home" class="view active" aria-label="Твоя нить">
+    <section id="home" class="view active" aria-label="Сегодня">
       <div class="home-heading">
         <div class="date" id="home-date">Сегодня</div>
-        <div class="heading-row">
-          <h1>Твоя нить</h1>
-          <button type="button" class="link-button" id="view-all">Все узлы</button>
-        </div>
-      </div>
-      <div class="thread-map" aria-label="Нить раскладов">
-        <img class="thread-line" src="./assets/uzel-thread.svg" alt="" aria-hidden="true">
-        <button type="button" class="thread-point" id="thread-recent">
-          <img src="./assets/uzel-knot.svg" alt="">
-          <strong id="thread-recent-name">Первый узел</strong>
-          <small id="thread-recent-meta">начни историю</small>
-        </button>
-        <button type="button" class="thread-point" id="thread-today">
-          <img src="./assets/uzel-knot.svg" alt="">
-          <strong>Карта дня</strong>
-          <small>сегодня</small>
-        </button>
-        <button type="button" class="thread-point open" id="thread-new">
-          <img src="./assets/uzel-open.svg" alt="">
-          <strong>Новый вопрос</strong>
-          <small>ждёт ответа</small>
-        </button>
       </div>
       <div class="today-tile">
         <div class="today-info">
           <div class="eyebrow">Карта дня</div>
-          <h2 id="today-title">Твоя карта ждёт</h2>
-          <p id="today-description">Открой одну карту и посмотри, на что стоит обратить внимание сегодня.</p>
-          <button type="button" class="today-action" id="today-link">Открыть карту дня</button>
+          <h2 id="today-title">Что скажет сегодня?</h2>
+          <p id="today-description">Карта уже на столе. Коснись её — и она откроется.</p>
+          <button type="button" class="today-action" id="today-link">Открыть карту →</button>
         </div>
         <button type="button" class="today-art" id="daily-card-button" aria-label="Открыть карту дня">
-          <img src="./assets/uzel-card-back.svg" id="today-image" alt="Рубашка карты Таро">
+          <span class="art-stack" aria-hidden="true"></span>
+          <img src="./assets/journal-card-back-front.svg" id="today-image" alt="Закрытая карта">
         </button>
       </div>
       <div class="ask-panel">
-        <label for="home-question">НОВЫЙ ВОПРОС</label>
-        <textarea id="home-question" rows="1" maxlength="350" placeholder="Что тебя держит?"></textarea>
+        <label for="home-question">Новый вопрос</label>
+        <textarea id="home-question" rows="1" maxlength="350" placeholder="О чём хочешь спросить?"></textarea>
       </div>
       <div class="home-modes" role="group" aria-label="Формат расклада">
-        <button type="button" data-home-mode="one" aria-pressed="false">1 карта</button>
-        <button type="button" data-home-mode="two" aria-pressed="false">2 карты</button>
-        <button type="button" data-home-mode="three" aria-pressed="true">3 карты</button>
-        <button type="button" disabled aria-label="Да или нет: скоро">Да / нет</button>
+        <button type="button" data-home-mode="one" aria-pressed="false">Одна карта</button>
+        <button type="button" data-home-mode="two" aria-pressed="false">Две</button>
+        <button type="button" data-home-mode="three" aria-pressed="true">Три</button>
+        <button type="button" disabled aria-label="Да или нет: скоро">Да или нет</button>
       </div>
       <div class="home-actions">
         <button type="button" class="primary" id="start">Разложить три карты</button>
+      </div>
+      <div class="week-history" aria-label="Нить недели">
+        <div class="week-header"><span>Нить недели</span>
+          <button type="button" id="view-all">вся история</button>
+        </div>
+        <div class="week-days" id="week-days"></div>
       </div>
     </section>
 
@@ -254,8 +240,8 @@
 </div>
 <nav class="tab-bar" aria-label="Основная навигация"><div class="tab-bar-inner">
   <button type="button" class="tab-button" data-tab="home" aria-selected="true"><img alt="" src="./assets/nav-today.svg">Сегодня</button>
-  <button type="button" class="tab-button" data-tab="setup" aria-selected="false"><img alt="" src="./assets/nav-spread.svg">Расклад</button>
-  <button type="button" class="tab-button" data-tab="history" aria-selected="false"><img alt="" src="./assets/nav-history.svg">История</button>
+  <button type="button" class="tab-button" data-tab="setup" aria-selected="false"><img alt="" src="./assets/nav-spread.svg">Расклады</button>
+  <button type="button" class="tab-button" data-tab="history" aria-selected="false"><img alt="" src="./assets/nav-history.svg">Нить</button>
   <button type="button" class="tab-button" data-tab="tarologist" aria-selected="false"><img alt="" src="./assets/nav-tarot.svg">Таролог</button>
 </div></nav>
 
