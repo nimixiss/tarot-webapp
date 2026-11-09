@@ -25,6 +25,8 @@ function rect(v){return {x:v.x,y:v.y,right:v.right,bottom:v.bottom,width:v.width
           }};
         },theme);
         await page.goto(BASE,{waitUntil:"networkidle"});
+        // Hosted Telegram script may replace the test stub. Assert each Figma theme directly.
+        await page.evaluate((scheme)=>{document.documentElement.dataset.uzelTheme=scheme==="dark"?"night":"paper";},theme);
         await page.evaluate(async()=>{await document.fonts.ready});
         const info=await page.evaluate(()=>{
           const box=(selector)=>{
