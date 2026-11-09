@@ -39,6 +39,7 @@
     dailyFlowPending = false;
     updateToday();
     updateThread();
+    renderWeek();
   }
 
   window.uzelSaveReading = function (data) {
@@ -66,17 +67,21 @@
     const dailyDescription = el("today-description");
     const dailyLink = el("today-link");
     if (!daily || !dailyArt || !dailyTitle) {
-      if (dailyArt) dailyArt.src = "./assets/uzel-card-back.svg";
-      if (dailyTitle) dailyTitle.textContent = "Твоя карта ждёт";
-      if (dailyDescription) dailyDescription.textContent = "Открой одну карту и посмотри, на что стоит обратить внимание сегодня.";
-      if (dailyLink) dailyLink.textContent = "Открыть карту дня";
+      if (dailyArt) {dailyArt.src = "./assets/journal-card-back-front.svg";dailyArt.alt="Закрытая карта";}
+      const artButton=el("daily-card-button");
+      if (artButton) artButton.classList.remove("is-open");
+      if (dailyTitle) dailyTitle.textContent = "Что скажет сегодня?";
+      if (dailyDescription) dailyDescription.textContent = "Карта уже на столе. Коснись её — и она откроется.";
+      if (dailyLink) dailyLink.textContent = "Открыть карту →";
       return;
     }
     dailyArt.src = "./images/" + (cardImageMap[daily.cards[0]] || "rubashka.png");
     dailyArt.alt = daily.cards[0];
+    const artButton=el("daily-card-button");
+    if (artButton) artButton.classList.add("is-open");
     dailyTitle.textContent = daily.cards[0].replace(/\s*\([^)]*\)/g,"");
-    if (dailyDescription) dailyDescription.textContent = "Сегодняшний расклад сохранён в истории на этом устройстве.";
-    if (dailyLink) dailyLink.textContent = "Посмотреть трактовку";
+    if (dailyDescription) dailyDescription.textContent = "Открой трактовку и посмотри, что сегодня подсказывает карта.";
+    if (dailyLink) dailyLink.textContent = "Читать полностью →";
   }
 
   function updateThread() {
@@ -88,6 +93,55 @@
       : "начни историю";
     const recent=el("thread-recent");
     if (recent) recent.setAttribute("aria-label",latest?"Открыть последний расклад":"Создать первый расклад");
+  }
+
+  function renderWeek() {
+    const container=el("week-days");
+    if (!container) return;
+    container.replaceChildren();
+    const now=new Date();
+    const dow=(now.getDay()+6)%7;
+    const monday=new Date(now.getFullYear(),now.getMonth(),now.getDate()-dow);
+    const labels=["пн","вт","ср","чт","пт","сб","вс"];
+    const records=safeLoad();
+    for (let i=0;i<7;i++){
+      const d=new Date(monday.getFullYear(),monday.getMonth(),monday.getDate()+i);
+      const recordsAtDate=records.filter(item=>{
+        const t=new Date(item.savedAt);
+        return !Number.isNaN(t.getTime()) &&
+          t.getFullYear()===d.getFullYear() &&
+          t.getMonth()===d.getMonth() &&
+          t.getDate()===d.getDate();
+      });
+      const latest=recordsAtDate[0];
+      const button=document.createElement("button");
+      button.type="button";
+      button.className="week-day"+(i===dow?" current":"");
+      button.disabled=!latest;
+      button.setAttribute("aria-label", latest
+        ? labels[i]+": посмотреть расклад"
+        : labels[i]+": раскладов нет");
+      const title=document.createElement("span");
+      title.className="week-title";
+      if(latest) {
+        const q=(latest.question||"").toLowerCase();
+        title.textContent= q.includes("работ")||q.includes("карьер")?"работа":
+          q.includes("люб")||q.includes("отнош")?"любовь":
+          latest.kind==="daily"?"карта дня":"расклад";
+      }
+      const mark=document.createElement("span");
+      mark.className="week-mark"+(latest?"":" dot");
+      if(latest){
+        const img=document.createElement("img");
+        img.src="./assets/journal-week-knot.svg";img.alt="";
+        mark.appendChild(img);
+      }
+      const name=document.createElement("span");
+      name.className="weekday-name";name.textContent=labels[i];
+      button.append(title,mark,name);
+      if(latest)button.addEventListener("click",()=>openHistoryItem(latest));
+      container.appendChild(button);
+    }
   }
 
   function openHistoryItem(item) {
@@ -155,15 +209,15 @@
       history:"ИСТОРИЯ",tarologist:"ТАРОЛОГ"
     })[view] || "MYSTIC TAROT";
     if (["home","setup","history","tarologist"].includes(view)) dailyFlowPending = false;
-    if (view==="home"){updateToday();updateThread();}
+    if (view==="home"){updateToday();updateThread();renderWeek();}
     if (view==="history") renderHistory();
   };
 
   function updateTelegramTheme() {
-    const theme=tg&&tg.colorScheme==="light"?"paper":"night";
+    const theme=tg?(tg.colorScheme==="light"?"paper":"night"):"paper";
     document.documentElement.dataset.uzelTheme=theme;
     const themeColor=document.querySelector('meta[name="theme-color"]');
-    if (themeColor) themeColor.content=theme==="paper"?"#f2ede3":"#15120f";
+    if (themeColor) themeColor.content=theme==="paper"?"#f2eee6":"#191519";
   }
 
   tabs.forEach(button=>button.addEventListener("click",function(){
@@ -229,7 +283,7 @@
   const toBot=el("return-to-bot");
   if (toBot) toBot.addEventListener("click",function(){
     if(tg && typeof tg.close==="function") tg.close();
-    else window.location.href="https://t.me/helenatarotbot";
+    else window.location.href="https://t.me/mystictarotcards_bot";
   });
 
   updateTelegramTheme();
@@ -237,5 +291,6 @@
   syncHomeModes(mode);
   updateToday();
   updateThread();
+  renderWeek();
   window.uzelOnShow("home");
 })();
