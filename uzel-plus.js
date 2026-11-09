@@ -5,7 +5,7 @@
   const homeModes = Array.from(document.querySelectorAll("[data-home-mode]"));
   const tabs = Array.from(document.querySelectorAll("[data-tab]"));
   const countNames = {one:"одну карту",two:"две карты",three:"три карты"};
-  const namesForMode = {one:"Открыть одну карту",two:"Разложить две карты",three:"Разложить три карты"};
+  const namesForMode = {one:"Разложить одну карту",two:"Разложить две карты",three:"Разложить три карты"};
   const today = new Date();
   let dailyFlowPending = false;
 
@@ -58,25 +58,38 @@
   function updateToday() {
     const dateNode=el("home-date");
     if (dateNode) {
-      dateNode.textContent = new Intl.DateTimeFormat("ru-RU",{weekday:"long",day:"numeric",month:"long"}).format(today);
+      dateNode.textContent = new Intl.DateTimeFormat("ru-RU",{weekday:"long",day:"numeric",month:"long"}).format(new Date());
     }
-    const daily = safeLoad().find(x=>x.kind==="daily" && isToday(x.savedAt));
-    const dailyArt = el("today-image");
-    const dailyTitle = el("today-title");
-    const dailyDescription = el("today-description");
-    const dailyLink = el("today-link");
-    if (!daily || !dailyArt || !dailyTitle) {
-      if (dailyArt) dailyArt.src = "./assets/uzel-card-back.svg";
-      if (dailyTitle) dailyTitle.textContent = "Твоя карта ждёт";
-      if (dailyDescription) dailyDescription.textContent = "Открой одну карту и посмотри, на что стоит обратить внимание сегодня.";
-      if (dailyLink) dailyLink.textContent = "Открыть карту дня";
+    const daily=safeLoad().find(x=>x.kind==="daily" && isToday(x.savedAt));
+    const home=el("home");
+    const image=el("today-image");
+    const wide=el("today-wide-image");
+    const behind=document.querySelector(".today-art .deck-behind");
+    const title=el("today-title");
+    const description=el("today-description");
+    const link=el("today-link");
+    const theme=document.documentElement.dataset.uzelTheme;
+    const back=theme==="paper"?"./assets/journal-card-back.svg":"./assets/night-card-back.svg";
+    if(home)home.dataset.daily=daily?"true":"false";
+    if(behind)behind.src=back;
+    if(!daily) {
+      if(image){image.src=back;image.alt="Закрытая карта Таро";}
+      if(wide)wide.removeAttribute("src");
+      if(title)title.textContent="Что скажет сегодня?";
+      if(description)description.textContent="Карта уже на столе. Коснись её — и она откроется.";
+      if(link)link.textContent="Открыть карту →";
       return;
     }
-    dailyArt.src = "./images/" + (cardImageMap[daily.cards[0]] || "rubashka.png");
-    dailyArt.alt = daily.cards[0];
-    dailyTitle.textContent = daily.cards[0].replace(/\s*\([^)]*\)/g,"");
-    if (dailyDescription) dailyDescription.textContent = "Сегодняшний расклад сохранён в истории на этом устройстве.";
-    if (dailyLink) dailyLink.textContent = "Посмотреть трактовку";
+    const asset="./images/"+(cardImageMap[daily.cards[0]]||"rubashka.png");
+    if(image){image.src=asset;image.alt=daily.cards[0];}
+    if(wide)wide.src=asset;
+    if(title)title.textContent=daily.cards[0].replace(/\s*\([^)]*\)/g,"");
+    if(description) {
+      const sentences=String(daily.interpretation||"").replace(/[*#_]/g,"").split(/[\n.!?]+/)
+        .map(x=>x.trim()).filter(x=>x.length>20 && x.length<150);
+      description.textContent=sentences[0] ? sentences[0]+(sentences[0].endsWith(".")?"":".") : "Посмотри, что эта карта говорит о твоём сегодняшнем дне.";
+    }
+    if(link)link.textContent="Читать полностью →";
   }
 
   function updateThread() {
@@ -160,10 +173,11 @@
   };
 
   function updateTelegramTheme() {
-    const theme=tg&&tg.colorScheme==="light"?"paper":"night";
+    const theme=!tg||tg.colorScheme==="light"?"paper":"night";
     document.documentElement.dataset.uzelTheme=theme;
     const themeColor=document.querySelector('meta[name="theme-color"]');
-    if (themeColor) themeColor.content=theme==="paper"?"#f2ede3":"#15120f";
+    if (themeColor) themeColor.content=theme==="paper"?"#f2eee6":"#191519";
+    updateToday();
   }
 
   tabs.forEach(button=>button.addEventListener("click",function(){
@@ -229,7 +243,7 @@
   const toBot=el("return-to-bot");
   if (toBot) toBot.addEventListener("click",function(){
     if(tg && typeof tg.close==="function") tg.close();
-    else window.location.href="https://t.me/helenatarotbot";
+    else window.location.href="https://t.me/mystictarotcards_bot";
   });
 
   updateTelegramTheme();
