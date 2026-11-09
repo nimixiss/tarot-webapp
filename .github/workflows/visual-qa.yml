@@ -1,0 +1,33 @@
+name: Visual QA — Uzел+ Mini App
+on:
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'uzel-*.css'
+      - 'uzel-*.js'
+      - 'assets/**'
+      - 'scripts/visual-qa.cjs'
+      - '.github/workflows/visual-qa.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  screenshots:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install browser harness
+        run: npm install --no-save playwright-core
+      - name: Check layouts and capture screenshots
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+        run: node scripts/visual-qa.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: uzel-v2-mobile-screenshots
+          path: qa/screenshots/*.png
+          retention-days: 7
