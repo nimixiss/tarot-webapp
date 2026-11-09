@@ -235,3 +235,31 @@ html[data-uzel-theme="night"] .primary {color:#191519}
 @media(prefers-reduced-motion:reduce){
  *,*::before,*::after {scroll-behavior:auto!important;transition:none!important;animation:none!important}
 }
+
+/* Final screen-polish after checking rendered 320–430 px screenshots. */
+#home .ask-panel textarea {resize:none;overflow-y:hidden}
+html[data-uzel-theme="night"] #home .home-heading {display:none}
+html[data-uzel-theme="night"] #home .today-tile {margin-top:18px}
+/* Twilight's revealed card is an image-led editorial hero, per Figma 4905:1922. */
+html[data-uzel-theme="night"] #home .today-tile.is-open {
+ display:block;position:relative;padding-top:171px;padding-bottom:21px;
+ margin-top:0;isolation:isolate;
+}
+html[data-uzel-theme="night"] #home .today-tile.is-open:before {
+ content:"";position:absolute;z-index:-1;
+ top:-8px;left:-20px;right:-20px;height:181px;
+ background-image:linear-gradient(0deg,var(--bg) 0%,rgba(25,21,25,.1) 68%),
+                  var(--daily-image);
+ background-size:cover;background-position:center,center 43%;background-repeat:no-repeat;
+}
+html[data-uzel-theme="night"] #home .today-tile.is-open .today-art {display:none}
+html[data-uzel-theme="night"] #home .today-tile.is-open .today-info {
+ display:block;max-width:100%;padding:0;
+}
+html[data-uzel-theme="night"] #home .today-tile.is-open .today-info h2 {
+ max-width:100%;font-size:33px;margin-bottom:8px
+}
+html[data-uzel-theme="night"] #home .today-tile.is-open .today-info .eyebrow {margin-bottom:7px}
+html[data-uzel-theme="night"] #home .today-tile.is-open .today-info p {
+ font:italic 17px/1.4 var(--font-book);color:var(--cream);max-width:330px;margin-bottom:12px
+}
