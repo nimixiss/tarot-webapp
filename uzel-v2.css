@@ -1,0 +1,237 @@
+/* Mystic Tarot — Узел+ v2: «Журнал» / «Ночная полоса».
+   Figma 4904:1836, 4904:1920, 4905:1839, 4905:1922.
+   Telegram draws its own native header; we do not imitate the status bar. */
+:root,html[data-uzel-theme="paper"] {
+ color-scheme:light;
+ --bg:#f2eee6;--surface:#eae5dc;--panel:#e6e0d5;--line:#d6cfc3;
+ --cream:#1f1c19;--muted:#6e675f;--gold:#a3452d;--accent:#a3452d;
+ --ink:#1f1c19;--strong:#8c857c;--paper:#fbf8f2;
+ --thread-image:url("./assets/journal-week-thread.svg");
+ --card-rear:url("./assets/journal-card-back-rear.svg");
+ --card-front:url("./assets/journal-card-back-front.svg");
+}
+html[data-uzel-theme="night"] {
+ color-scheme:dark;
+ --bg:#191519;--surface:#262026;--panel:#30272e;--line:#3a3238;
+ --cream:#efe6d8;--muted:#a79c93;--gold:#cf8f63;--accent:#cf8f63;
+ --ink:#191519;--strong:#8e847c;--paper:#e9dfd0;
+ --thread-image:url("./assets/twilight-week-thread.svg");
+ --card-rear:url("./assets/twilight-card-back-rear.svg");
+ --card-front:url("./assets/twilight-card-back-front.svg");
+}
+html,body {background:var(--bg);color:var(--cream);}
+body {
+ margin:0;padding:0 20px calc(90px + env(safe-area-inset-bottom,0px));
+ min-height:100svh;max-width:100vw;overflow-x:hidden;
+}
+.shell {width:100%;max-width:390px;margin:0 auto}
+header.screen-header {display:none}
+h1,h2 {font-weight:400;letter-spacing:-.025em}
+.view.active {display:block}
+#home {padding-top:8px;overflow:visible}
+#home .home-heading {padding:0;margin:0 0 19px}
+#home .home-heading .date {
+ font-size:14px;line-height:20px;font-weight:500;letter-spacing:0;
+ color:var(--cream);text-transform:none;
+}
+#home .home-heading .heading-row {display:none}
+#home .home-heading:after {
+ display:block;content:"";height:1px;background:var(--line);margin-top:12px;
+}
+#home .today-tile {
+ display:grid;grid-template-columns:minmax(0,1fr) 118px;
+ gap:8px;align-items:start;position:relative;
+ padding:0 0 24px;margin:0;min-height:0;border-bottom:1px solid var(--line);
+}
+#home .today-info {min-width:0;grid-column:1;grid-row:1}
+#home .today-info .eyebrow {
+ font:400 13px/1.4 var(--font-ui);letter-spacing:0;text-transform:none;
+ color:var(--muted);margin:0 0 8px
+}
+#home .today-info h2 {
+ font:400 35px/1.12 var(--font-book);letter-spacing:-.03em;
+ color:var(--cream);max-width:235px;margin:0 0 14px;overflow-wrap:anywhere;
+}
+#home .today-info p {
+ font:400 15px/1.45 var(--font-ui);color:var(--muted);
+ margin:0 0 12px;max-width:245px;
+}
+#home .today-info .today-action {
+ font:500 15px/1.4 var(--font-ui);color:var(--cream);
+ text-decoration:underline;text-underline-offset:2px;
+ background:transparent;border:0;padding:0;text-align:left
+}
+#home .today-art {
+ grid-column:2;grid-row:1;position:relative;display:block;
+ padding:0;margin:0;flex:none;border:0;background:none;
+ width:118px;min-height:174px;align-self:start;
+}
+#home .today-art .art-stack {
+ position:relative;display:block;width:118px;height:171px;
+}
+#home .today-art .art-stack:before,#home .today-art .art-stack:after {
+ content:"";position:absolute;display:block;background-repeat:no-repeat;
+ background-size:contain;background-position:center;
+}
+#home .today-art .art-stack:before {
+ width:116px;height:165px;right:-5px;top:5px;background-image:var(--card-rear)
+}
+#home .today-art .art-stack:after {
+ width:112px;height:159px;right:8px;top:0;background-image:var(--card-front)
+}
+#home .today-art > img {
+ display:none
+}
+#home .today-art.is-open .art-stack {display:none}
+#home .today-art.is-open > img {
+ display:block;width:110px;height:162px;object-fit:cover;
+ border-radius:5px;transform:rotate(5deg);border:1px solid var(--line);
+}
+#home .ask-panel {
+ position:relative;z-index:1;margin:21px 0 0;padding:0;
+}
+#home .ask-panel label {display:none}
+#home .ask-panel textarea {
+ display:block;width:100%;height:45px;min-height:45px;max-height:125px;
+ margin:0;padding:4px 8px 6px;border:0;border-left:2px solid var(--cream);
+ border-bottom:1px solid var(--strong);border-radius:0;resize:vertical;
+ background:transparent;box-shadow:none;color:var(--cream);
+ font:400 22px/1.35 var(--font-book);
+}
+#home .ask-panel textarea::placeholder {color:var(--strong);opacity:1}
+#home .home-modes {
+ display:flex;align-items:center;justify-content:flex-start;
+ gap:22px;margin:15px 0 19px;overflow:visible;flex-wrap:nowrap;
+}
+#home .home-modes button {
+ flex:0 0 auto;min-width:0;white-space:nowrap;position:relative;
+ border:0;border-radius:0;background:none;color:var(--muted);
+ font:400 15px/22px var(--font-ui);padding:0 0 6px;opacity:1;
+}
+#home .home-modes button[aria-pressed="true"] {
+ background:none;color:var(--cream);font-weight:500;
+}
+#home .home-modes button[aria-pressed="true"]:after {
+ content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--accent)
+}
+#home .home-modes button:disabled {color:var(--muted);opacity:.45}
+#home .home-actions {padding:0 0 26px;margin:0;border-bottom:1px solid var(--line)}
+#home .home-actions .primary {
+ display:inline-flex;align-items:center;justify-content:center;
+ min-height:44px;width:auto;border-radius:4px;padding:11px 20px;
+ background:var(--accent);color:var(--paper);
+ font:500 15px/22px var(--font-ui);box-shadow:none
+}
+html[data-uzel-theme="night"] #home .home-actions .primary {color:#191519}
+#home .week-history {
+ margin:12px 0 0;padding:0;position:relative;min-height:116px;
+}
+#home .week-header {display:flex;align-items:center;justify-content:space-between;gap:8px}
+#home .week-header span {font:400 13px/18px var(--font-ui);color:var(--muted)}
+#home .week-header button {
+ background:none;border:0;padding:0;color:var(--cream);text-decoration:underline;
+ font:500 13px/18px var(--font-ui)
+}
+#home .week-days {
+ width:calc(100% + 40px);margin:9px -20px 0;height:77px;
+ display:grid;grid-template-columns:repeat(7,minmax(0,1fr));position:relative;
+ align-items:start;
+}
+#home .week-days:before {
+ content:"";position:absolute;left:0;right:0;top:35px;height:8px;
+ background-image:var(--thread-image);background-repeat:no-repeat;
+ background-position:center;background-size:100% 100%;
+ pointer-events:none;z-index:0
+}
+#home .week-day {
+ min-width:0;height:74px;display:flex;flex-direction:column;align-items:center;
+ justify-content:flex-start;padding:0;position:relative;background:none;border:0;
+ color:var(--muted);font:400 12px/1.3 var(--font-ui);gap:0;
+}
+#home .week-day .week-title {
+ height:28px;font:italic 12px/16px var(--font-book);
+ white-space:nowrap;max-width:56px;overflow:hidden;text-overflow:ellipsis;
+}
+#home .week-day .week-mark {
+ width:16px;height:22px;margin-top:0;display:grid;place-items:center;z-index:1;
+}
+#home .week-day .week-mark img {display:block;object-fit:contain;width:16px;height:17px}
+#home .week-day .week-mark.dot:after {content:"";width:6px;height:6px;border-radius:50%;background:var(--accent)}
+#home .week-day.current .week-mark.dot:after {
+ width:10px;height:10px;border:1.5px solid var(--accent);background:var(--bg)
+}
+#home .week-day .weekday-name {margin-top:2px}
+#home .week-day.current .weekday-name {color:var(--cream);font-weight:500}
+#home .week-day:disabled {cursor:default}
+#home .week-day:disabled .week-title {color:transparent}
+#home .week-day:disabled .week-mark.dot:after {opacity:.75}
+#home .week-day .week-title:empty:after {content:" "}
+#home .thread-map {display:none!important}
+
+/* New editorial tabs — no large icons or thick red rule. */
+.tab-bar {
+ position:fixed;bottom:0;left:0;right:0;z-index:30;
+ border-top:1px solid var(--line);background:var(--bg);
+ min-height:calc(68px + env(safe-area-inset-bottom,0px));
+ padding:0 10px env(safe-area-inset-bottom,0px);
+}
+.tab-bar-inner {max-width:390px;display:flex;width:100%;gap:0}
+.tab-button {
+ min-height:56px;padding:16px 2px 12px;gap:0;
+ font:400 13px/18px var(--font-ui);color:var(--muted);
+ display:flex;align-items:center;justify-content:center;
+}
+.tab-button img {display:none}
+.tab-button[aria-selected="true"] {color:var(--cream);font-weight:500}
+.tab-button[aria-selected="true"]:before {
+ width:5px;height:5px;left:8px;top:23px;border-radius:50%;transform:none
+}
+/* Other screens reuse the same text, spacing and palette. */
+#setup,#draw,#result,#history,#tarologist {padding-top:22px;padding-bottom:25px}
+#setup h1,#draw h1,#result h1,#history h1,#tarologist h1 {
+ font:400 30px/1.22 var(--font-book);color:var(--cream)
+}
+#setup .mode-grid {background:var(--surface)}
+#setup .mode[aria-pressed="true"] {box-shadow:inset 0 -2px 0 var(--accent)}
+#setup textarea,#setup select {background:var(--surface);border:1px solid var(--line)}
+#draw #cards.cards {
+ width:100%;display:flex;align-items:flex-start;justify-content:center;
+ gap:10px;margin:18px 0 0;
+}
+#draw #cards .card {width:calc((100% - 24px)/3);flex:0 1 108px;max-width:108px;min-width:0}
+#draw #cards[data-count="1"] .card {width:min(56%,190px);max-width:190px;flex:0 1 190px}
+#draw #cards[data-count="2"] .card {width:43%;max-width:148px;flex:0 1 148px}
+#draw .card img {object-fit:cover}
+#draw .actions {display:flex;align-items:stretch}
+#draw .actions .primary {min-width:0}
+#result-cards.result-cards {gap:9px}
+#result-cards .result-card {min-width:0}
+#result .reading-text {font:400 17px/1.55 var(--font-book)}
+.primary {background:var(--accent);color:var(--paper);border-radius:5px;box-shadow:none}
+html[data-uzel-theme="night"] .primary {color:#191519}
+.ghost {border-color:var(--strong);color:var(--cream);border-radius:5px}
+#history .history-entry img {border-radius:3px}
+@media(max-width:359px){
+ body {padding:0 16px calc(90px + env(safe-area-inset-bottom,0px))}
+ #home .today-tile {grid-template-columns:minmax(0,1fr) 98px;gap:6px}
+ #home .today-info h2 {font-size:30px}
+ #home .today-art {width:98px;min-height:148px}
+ #home .today-art .art-stack {width:98px;height:148px}
+ #home .today-art .art-stack:before {width:100px;height:146px}
+ #home .today-art .art-stack:after {width:94px;height:136px}
+ #home .today-art.is-open > img {width:95px;height:138px}
+ #home .home-modes {gap:13px}
+ #home .home-modes button {font-size:13px}
+ #home .week-days {width:calc(100% + 32px);margin-left:-16px;margin-right:-16px}
+ #home .ask-panel textarea {font-size:20px}
+ .tab-button {font-size:12px}
+ .tab-button[aria-selected="true"]:before {left:4px}
+}
+@media(max-height:700px){
+ #home .today-tile {padding-bottom:14px}
+ #home .home-actions {padding-bottom:18px}
+ #home .week-history {margin-top:10px}
+}
+@media(prefers-reduced-motion:reduce){
+ *,*::before,*::after {scroll-behavior:auto!important;transition:none!important;animation:none!important}
+}
