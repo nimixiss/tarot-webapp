@@ -60,7 +60,35 @@ function rect(v){return {x:v.x,y:v.y,right:v.right,bottom:v.bottom,width:v.width
         const file=path.join(OUT,theme+"-home-"+width+".png");
         await page.screenshot({path:file,fullPage:true});
         logs.push({theme,width,view:"home",...info});
+        if(width===320 || width===390) {
+          // Required question and scheme choices, on both themes and narrow devices.
+          await page.locator('[data-tab="setup"]').click();
+          assert(await page.locator("#setup").isVisible(),"Setup view not open");
+          assert.equal(await page.locator('[data-question-preset]').count(),0,"Suggestion chips remain");
+          assert.equal(await page.locator("#setup").getByText("AI-модели").count(),0,"AI disclaimer remains on question screen");
+          await page.locator("#to-draw").click();
+          assert(await page.locator("#setup").isVisible(),"Empty question allowed navigation");
+          assert(await page.locator("#question-error").isVisible(),"Missing-question error not shown");
+          await page.locator("#question").fill("Стоит ли сейчас менять работу?");
+          assert(!(await page.locator("#question-error").isVisible()),"Error not cleared after typing");
+          await page.locator('[data-layout="career"]').click();
+          assert.equal(await page.locator("#layout").inputValue(),"career","Selected scheme did not reach hidden backend field");
+          assert.equal(await page.locator('[data-layout="career"]').getAttribute("aria-pressed"),"true");
+          await page.screenshot({path:path.join(OUT,theme+"-setup-"+width+".png"),fullPage:true});
+          await page.locator('[data-mode="one"]').click();
+          assert(!(await page.locator("#layout-wrap").isVisible()),"Three-card scheme visible for one card");
+          await page.locator('[data-mode="three"]').click();
+          assert(await page.locator("#layout-wrap").isVisible(),"Three-card scheme not restored");
+          await page.locator('[data-tab="home"]').click();
+          assert(await page.locator("#home").isVisible(),"Failed to return home");
+        }
         if(width===390){
+          await page.locator("#start").click();
+          assert(await page.locator("#home").isVisible(),"Empty home question allowed draw");
+          assert(await page.locator("#home-question-error").isVisible(),"Missing home-question error not shown");
+          await page.locator("#home-question").fill("Какие возможности открываются?");
+          assert(!(await page.locator("#home-question-error").isVisible()),"Home error did not clear after typing");
+          await page.locator("#home-question").fill("");
           // Verify both open and closed daily-card compositions, using actual client storage.
           await page.evaluate(()=>{
             localStorage.setItem("mystic-tarot-uzel-history-v1",JSON.stringify([{
@@ -94,6 +122,6 @@ function rect(v){return {x:v.x,y:v.y,right:v.right,bottom:v.bottom,width:v.width
       }
     }
     fs.writeFileSync(path.join(OUT,"geometry.json"),JSON.stringify(logs,null,2));
-    process.stdout.write("Visual smoke tests passed: "+widths.length*2+" mobile home sizes, 2 draw screens.\n");
+    process.stdout.write("Visual smoke tests passed: "+widths.length*2+" home sizes, required-question flows, two draw screens.\n");
   }finally{await browser.close()}
 })().catch(e=>{console.error(e.stack||e);process.exitCode=1});
