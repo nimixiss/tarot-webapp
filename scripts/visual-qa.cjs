@@ -60,6 +60,14 @@ const server=http.createServer((req,res)=>{
     await page.evaluate(()=>document.fonts.ready);
     assert.equal(await page.locator("#home").getAttribute("data-daily"),"true");
     checkLayout(await measurements(page),theme+" opened");
+    const openedRects=await page.evaluate(()=>{
+      const rect=s=>document.querySelector(s).getBoundingClientRect();
+      const title=rect("#today-title"),text=rect("#today-description"),action=rect("#today-link"),question=rect("#home-question");
+      return {titleBottom:title.bottom,textTop:text.top,textBottom:text.bottom,actionTop:action.top,actionBottom:action.bottom,questionTop:question.top};
+    });
+    assert(openedRects.titleBottom<=openedRects.textTop+3,theme+" title overlaps description: "+JSON.stringify(openedRects));
+    assert(openedRects.textBottom<openedRects.questionTop-8,theme+" daily text overlaps question: "+JSON.stringify(openedRects));
+    assert(openedRects.actionBottom<openedRects.questionTop-8,theme+" day action overlaps question: "+JSON.stringify(openedRects));
     await page.screenshot({path:path.join(screenshots,theme+"-opened-390.png")});
     await page.locator("#today-link").click();
     assert(await page.locator("#result.active").count()===1,theme+" opened reading did not navigate");
@@ -87,6 +95,8 @@ const server=http.createServer((req,res)=>{
     assert(await page.locator("#submit").isEnabled());
     const cardWidth=await page.locator("#cards .card").first().evaluate(el=>el.getBoundingClientRect().width);
     assert(cardWidth<=165,"one-card layout too wide: "+cardWidth);
+    const actions=await page.evaluate(()=>({reshuffleBottom:document.querySelector("#reshuffle").getBoundingClientRect().bottom,tabTop:document.querySelector(".tab-bar").getBoundingClientRect().top}));
+    assert(actions.reshuffleBottom<=actions.tabTop+1,"one-card actions behind bottom nav: "+JSON.stringify(actions));
     await page.screenshot({path:path.join(screenshots,"night-draw-one.png")});
     await page.locator("#submit").scrollIntoViewIfNeeded();
     assert(await page.locator("#submit").isVisible());
