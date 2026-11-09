@@ -70,6 +70,8 @@
       if (dailyArt) {dailyArt.src = "./assets/journal-card-back-front.svg";dailyArt.alt="Закрытая карта";}
       const artButton=el("daily-card-button");
       if (artButton) artButton.classList.remove("is-open");
+      const hero=el("home")?.querySelector(".today-tile");
+      if (hero) {hero.classList.remove("is-open");hero.style.removeProperty("--daily-image");}
       if (dailyTitle) dailyTitle.textContent = "Что скажет сегодня?";
       if (dailyDescription) dailyDescription.textContent = "Карта уже на столе. Коснись её — и она откроется.";
       if (dailyLink) dailyLink.textContent = "Открыть карту →";
@@ -79,6 +81,8 @@
     dailyArt.alt = daily.cards[0];
     const artButton=el("daily-card-button");
     if (artButton) artButton.classList.add("is-open");
+    const hero=el("home")?.querySelector(".today-tile");
+    if (hero) {hero.classList.add("is-open");hero.style.setProperty("--daily-image", "url(\""+dailyArt.src+"\")");}
     dailyTitle.textContent = daily.cards[0].replace(/\s*\([^)]*\)/g,"");
     if (dailyDescription) dailyDescription.textContent = "Открой трактовку и посмотри, что сегодня подсказывает карта.";
     if (dailyLink) dailyLink.textContent = "Читать полностью →";
@@ -249,7 +253,12 @@
       el("counter").textContent=String(el("question").value.length);
     }
   });
-  const dailyButton=el("daily-card-button");
+  const homeQuestionEl=el("home-question");
+  if(homeQuestionEl)homeQuestionEl.addEventListener("input",function(){
+    this.style.height="45px";
+    this.style.height=Math.max(45,Math.min(this.scrollHeight,116))+"px";
+  });
+    const dailyButton=el("daily-card-button");
   if (dailyButton) dailyButton.addEventListener("click",openToday);
   const dailyLink=el("today-link");
   if (dailyLink) dailyLink.addEventListener("click",openToday);
