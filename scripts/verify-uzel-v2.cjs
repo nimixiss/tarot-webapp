@@ -77,10 +77,10 @@ function rect(v){return {x:v.x,y:v.y,right:v.right,bottom:v.bottom,width:v.width
           logs.push({theme,width,view:"daily-open"});
           // One-card flow and visible geometry after reveal.
           await page.locator('[data-home-mode="one"]').click();
+          await page.locator("#home-question").fill("Какой настрой выбрать сегодня?");
           await page.locator("#start").click();
-          assert(await page.locator("#setup").isVisible(),"setup not shown");
-          await page.locator("#to-draw").click();
-          assert(await page.locator("#draw").isVisible(),"draw not shown");
+          assert(await page.locator("#draw").isVisible(),"home CTA did not open cards");
+          assert((await page.locator("#draw-question").innerText()).includes("Какой настрой выбрать сегодня?"),"question was not carried into draw");
           const cards=page.locator("#cards .card");
           assert.equal(await cards.count(),1,"single-card draw is not single");
           await cards.first().click();
