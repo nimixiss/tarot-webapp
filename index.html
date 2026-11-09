@@ -127,7 +127,8 @@
       </div>
       <div class="ask-panel">
         <label for="home-question">Новый вопрос</label>
-        <textarea id="home-question" rows="1" maxlength="350" placeholder="О чём хочешь спросить?"></textarea>
+        <textarea id="home-question" rows="1" maxlength="350" required aria-required="true" aria-describedby="home-question-error" placeholder="О чём хочешь спросить?"></textarea>
+        <p class="question-error" id="home-question-error" role="alert" hidden>Сначала напиши вопрос для расклада.</p>
       </div>
       <div class="home-modes" role="group" aria-label="Формат расклада">
         <button type="button" data-home-mode="one" aria-pressed="false">Одна карта</button>
@@ -148,44 +149,52 @@
 
     <section id="setup" class="view" aria-label="Настройка расклада">
       <div class="eyebrow">РАСКЛАД · НОВЫЙ ВОПРОС</div>
-      <h1>О чём спросить?</h1>
-      <div class="mode-grid" role="group" aria-label="Число карт">
+      <h1>О чём хочешь спросить?</h1>
+
+      <label for="question">Твой вопрос</label>
+      <textarea id="question" rows="3" maxlength="350" required aria-required="true" aria-describedby="question-error" placeholder="Опиши ситуацию или задай вопрос своими словами"></textarea>
+      <div class="count"><span id="counter">0</span> / 350</div>
+      <p class="question-error" id="question-error" role="alert" hidden>Сначала напиши вопрос для расклада.</p>
+
+      <div class="setup-section-label">Количество карт</div>
+      <div class="mode-grid" role="group" aria-label="Количество карт">
         <button type="button" class="mode" data-mode="one" aria-pressed="false">
           <span class="symbol">Ⅰ</span><strong>Одна карта</strong><small>Главная тема</small>
         </button>
-        <button type="button" class="mode" data-mode="two" aria-pressed="true">
+        <button type="button" class="mode" data-mode="two" aria-pressed="false">
           <span class="symbol">Ⅱ</span><strong>Две карты</strong><small>Связь и влияние</small>
         </button>
-        <button type="button" class="mode" data-mode="three" aria-pressed="false">
+        <button type="button" class="mode" data-mode="three" aria-pressed="true">
           <span class="symbol">Ⅲ</span><strong>Три карты</strong><small>Взгляд глубже</small>
         </button>
       </div>
       <div id="layout-wrap" hidden>
-        <label for="layout">Схема трёх карт</label>
-        <select id="layout">
+        <div class="setup-section-label" id="layout-label">Схема трёх карт</div>
+        <div class="layout-options" role="group" aria-labelledby="layout-label">
+          <button type="button" class="layout-option" data-layout="standard" aria-pressed="true">
+            <strong>Общий расклад</strong><small>Ситуация · Влияние · Следующий шаг</small>
+          </button>
+          <button type="button" class="layout-option" data-layout="relationships" aria-pressed="false">
+            <strong>Отношения</strong><small>Я · Другой человек · Между нами</small>
+          </button>
+          <button type="button" class="layout-option" data-layout="decision" aria-pressed="false">
+            <strong>Выбор</strong><small>Первый путь · Второй путь · Опора</small>
+          </button>
+          <button type="button" class="layout-option" data-layout="career" aria-pressed="false">
+            <strong>Работа</strong><small>Сейчас · Новая возможность · Переход</small>
+          </button>
+        </div>
+        <select id="layout" class="sr-only-select" aria-label="Схема трёх карт" tabindex="-1">
           <option value="standard">Ситуация — влияние — следующий шаг</option>
           <option value="relationships">Я — другой человек — отношения</option>
           <option value="decision">Путь А — путь Б — на что опереться</option>
           <option value="career">Работа: сейчас — новый оффер — переход</option>
         </select>
       </div>
-      <label for="question">Твой вопрос <span>(по желанию)</span></label>
-      <textarea id="question" rows="3" maxlength="350" placeholder="Что мне важно понять об этой ситуации?"></textarea>
-      <div class="count"><span id="counter">0</span> / 350</div>
       <div class="actions">
         <button type="button" class="ghost" id="back-home">Назад</button>
         <button type="button" class="primary" id="to-draw">Перейти к картам</button>
       </div>
-      <div class="question-presets">
-        <div class="eyebrow">Подсказки</div>
-        <div class="preset-buttons">
-          <button type="button" data-question-preset="career">Работа</button>
-          <button type="button" data-question-preset="relationships">Отношения</button>
-          <button type="button" data-question-preset="decision">Решение</button>
-        </div>
-        <p class="hint intro-hint">Чем конкретнее вопрос, тем точнее ответ.</p>
-      </div>
-      <div class="hint">Вопрос передаётся AI-модели для трактовки. Не указывай данные, которые не хочешь передавать.</div>
     </section>
 
     <section id="draw" class="view" aria-label="Выбор карт">
