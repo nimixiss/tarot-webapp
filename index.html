@@ -563,7 +563,15 @@
   }
 
 
-  el("start").addEventListener("click", function(){show("setup");});
+  el("start").addEventListener("click", function(){
+    const homeValue=el("home-question").value.trim();
+    if(homeValue){
+      el("question").value=homeValue.slice(0,350);
+      el("counter").textContent=String(el("question").value.length);
+    }
+    resetCards();
+    show("draw");
+  });
   el("back-home").addEventListener("click", function(){show("home");});
   el("back-setup").addEventListener("click", function(){show("setup");});
   el("to-draw").addEventListener("click", function(){resetCards();show("draw");});
