@@ -61,6 +61,20 @@ function rect(v){return {x:v.x,y:v.y,right:v.right,bottom:v.bottom,width:v.width
         await page.screenshot({path:file,fullPage:true});
         logs.push({theme,width,view:"home",...info});
         if(width===390){
+          // Verify both open and closed daily-card compositions, using actual client storage.
+          await page.evaluate(()=>{
+            localStorage.setItem("mystic-tarot-uzel-history-v1",JSON.stringify([{
+              savedAt:new Date().toISOString(),id:"test-daily",kind:"daily",
+              cards:["Верховная Жрица (II)"],question:"Что мне важно заметить сегодня?",
+              positions:["Главная тема"],interpretation:"Посмотри на то, что уже знаешь."
+            }]));
+          });
+          await page.reload({waitUntil:"networkidle"});
+          await page.evaluate((scheme)=>{document.documentElement.dataset.uzelTheme=scheme==="dark"?"night":"paper";},theme);
+          assert(await page.locator(".today-tile.is-open").count()===1,"Daily card opened state missing");
+          assert(await page.locator("#today-title").innerText()==="Верховная Жрица","Daily card title missing");
+          await page.screenshot({path:path.join(OUT,theme+"-daily-open-390.png"),fullPage:true});
+          logs.push({theme,width,view:"daily-open"});
           // One-card flow and visible geometry after reveal.
           await page.locator('[data-home-mode="one"]').click();
           await page.locator("#start").click();
