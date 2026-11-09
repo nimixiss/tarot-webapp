@@ -263,3 +263,81 @@ html[data-uzel-theme="night"] #home .today-tile.is-open .today-info .eyebrow {ma
 html[data-uzel-theme="night"] #home .today-tile.is-open .today-info p {
  font:italic 17px/1.4 var(--font-book);color:var(--cream);max-width:330px;margin-bottom:12px
 }
+
+
+/* Question-first flow: Figma Узел+ v2, readable without native dropdown overlays. */
+#home .question-error,
+#setup .question-error {
+  display:block;
+  margin:8px 0 0;
+  color:var(--accent);
+  font:500 13px/1.35 var(--font-ui);
+}
+#home .question-error[hidden],
+#setup .question-error[hidden],
+#setup #layout-wrap[hidden] {display:none!important}
+#home #home-question[aria-invalid="true"],
+#setup #question[aria-invalid="true"] {border-color:var(--accent)}
+#home .ask-panel .question-error {padding-left:0}
+#setup > h1 {margin-bottom:20px}
+#setup > label[for="question"] {
+  font:500 14px/1.4 var(--font-ui);
+  letter-spacing:0;margin:0 0 10px;color:var(--cream)
+}
+#setup #question {
+  min-height:116px;
+  line-height:1.5;
+  padding:14px 15px 31px;
+  resize:vertical;
+}
+#setup .count {margin:-29px 13px 15px 0;position:relative;pointer-events:none}
+#setup .setup-section-label {
+  margin:22px 0 10px;
+  font:500 14px/1.4 var(--font-ui);
+  color:var(--cream);
+}
+#setup .mode-grid {margin:0 0 14px}
+#setup .layout-options {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+}
+#setup .layout-option {
+  display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;
+  gap:6px;min-width:0;min-height:94px;
+  background:var(--surface);
+  color:var(--cream);
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:12px 12px 11px;
+  text-align:left;box-shadow:none;
+}
+#setup .layout-option strong {
+  display:block;letter-spacing:0;
+  font:500 14px/1.3 var(--font-ui)
+}
+#setup .layout-option small {
+  display:block;color:var(--muted);
+  font:400 12px/1.35 var(--font-ui);
+  overflow-wrap:anywhere;
+}
+#setup .layout-option[aria-pressed="true"] {
+  border-color:var(--accent);
+  box-shadow:inset 0 0 0 1px var(--accent);
+}
+#setup .sr-only-select {
+  position:absolute!important;width:1px!important;height:1px!important;
+  overflow:hidden!important;
+  opacity:0!important;
+  pointer-events:none!important;
+  clip-path:inset(50%);
+}
+#setup .actions {margin:22px 0 20px;gap:8px}
+#setup .actions .ghost {min-width:82px}
+#setup .actions .primary {flex:1;min-width:0}
+@media(max-width:359px) {
+  #setup .layout-options {grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+  #setup .layout-option {padding:10px 9px;min-height:102px}
+  #setup .layout-option strong {font-size:13px}
+  #setup .layout-option small {font-size:11.5px}
+}
